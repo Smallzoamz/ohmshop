@@ -91,3 +91,12 @@
 **Database Tables: 7**
 **Database Tables: 7**
 **API Endpoints: 29+**
+
+---
+
+### [2026-01-09 00:05:00] - Copy Placeholders
+| File | Line | Keyword | Status | Change |
+|------|------|---------|--------|--------|
+| public/dashboard.html | 160 | placeholders-section | Feature | Added UI for copying status placeholders ({time}, {date}, etc.) |
+| public/js/dashboard.js | 710 | copyToClipboard | Feature | Added clipboard copy function with toast notification |
+| public/css/dashboard.css | 1160 | .placeholders-section | Feature | Added CSS styles for placeholder grid and buttons |
