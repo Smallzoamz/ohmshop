@@ -811,4 +811,14 @@ async function startServer() {
     }
 }
 
-startServer();
+// Export for Vercel
+module.exports = app;
+
+if (require.main === module) {
+    startServer();
+} else {
+    // Vercel environment: Initialize DB asynchronously
+    initializeDatabase().then(() => {
+        console.log('✅ Vercel: Database initialized');
+    }).catch(console.error);
+}
