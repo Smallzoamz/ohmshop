@@ -731,3 +731,71 @@ function copyToClipboard(text) {
         document.body.removeChild(textArea);
     });
 }
+
+// ==========================================
+// REAL-TIME TOPUP WATCHER
+// ==========================================
+let topupPollInterval;
+let lastPendingIds = new Set();
+
+function startTopupWatcher() {
+    if (topupPollInterval) clearInterval(topupPollInterval);
+
+    const checkStatus = async () => {
+        try {
+            const res = await fetch('/api/topup/pending');
+            if (res.status === 401) return; // Not logged in
+            const topups = await res.json();
+
+            // Filter only pending ones from server to track
+            const currentPending = topups.filter(t => t.source === 'website_pending');
+
+            // Check for completed ones (Approved/Rejected)
+            // Strategy: We track IDs that WERE pending. If they change status in the fetch list, we notify.
+
+            // 1. Convert current list to Map for easy lookup
+            const currentMap = new Map(topups.map(t => [t.id, t.source]));
+
+            // 2. Check tracked IDs
+            lastPendingIds.forEach(id => {
+                const newStatus = currentMap.get(id);
+
+                if (newStatus === 'approved') {
+                    showToast('✅ เติมเงินสำเร็จ! ยอดเงินเข้าแล้ว', 'success');
+                    lastPendingIds.delete(id);
+                    // Refresh Profile to show new balance
+                    checkAuthentication();
+                } else if (newStatus === 'rejected') {
+                    showToast('❌ การเติมเงินถูกปฏิเสธ', 'error');
+                    lastPendingIds.delete(id);
+                }
+            });
+
+            // 3. Add new pending items to track
+            currentPending.forEach(t => lastPendingIds.add(t.id));
+
+        } catch (e) {
+            console.log('Poll error', e);
+        }
+    };
+
+    // Initial check
+    checkStatus();
+
+    // Poll every 5 seconds
+    topupPollInterval = setInterval(checkStatus, 5000);
+}
+
+// Start watcher when dashboard loads
+// Note: We already call this in checkAuthentication logic if we wanted, 
+// but since we append at bottom, we can just hook into existing DOMContentLoaded if currentUser is set,
+// OR since checkAuthentication calls everything, we can just let it run if we add the call there.
+// However, editing checkAuthentication is invasive (top of file).
+// Let's use a separate DOMContentLoaded hook that checks if currentUser exists (set by checkAuth).
+// Or better: Override checkAuthentication? No.
+// Let's just run it. The function 'startTopupWatcher' handles auth check inside fetch 401.
+// But better to only start if on dashboard.
+if (document.getElementById('userBalance')) {
+    startTopupWatcher();
+}
+
