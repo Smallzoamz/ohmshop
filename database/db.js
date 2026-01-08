@@ -1,152 +1,98 @@
 /**
- * Database Connection Module (sql.js Version)
+ * Database Connection Module (PostgreSQL Version)
  * Discord Streaming Status Rental System
  * © 2026 Bonchon-Studio
- * 
- * Uses sql.js - SQLite compiled to JavaScript (no native modules needed)
  */
 
-const initSqlJs = require('sql.js');
+const { Pool } = require('pg');
 const fs = require('fs');
 const path = require('path');
 
-// Database file path
-const DB_PATH = path.join(__dirname, 'data.db');
+// Connection Config
+const isProduction = process.env.NODE_ENV === 'production';
+const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
 
-let db = null;
+if (!connectionString) {
+    console.warn('⚠️  DATABASE_URL is not set. Database features will not work.');
+}
+
+// Disable SSL for local development if needed, enable for Vercel/Neon/Supabase usually
+const pool = new Pool({
+    connectionString,
+    ssl: isProduction || connectionString?.includes('vercel-storage') ? { rejectUnauthorized: false } : false
+});
+
 let initialized = false;
 
+// ============================================
+// Helper Functions
+// ============================================
+
 /**
- * Initialize database connection
+ * Initialize database
  */
 async function initializeDatabase() {
-    if (initialized && db) return db;
-
-    // Initialize SQL.js
-    const SQL = await initSqlJs();
-
-    // Check if running on Vercel (read-only filesystem usually)
-    // We'll use in-memory DB if file write is not possible or if explicitly disabled
-    const isVercel = process.env.VERCEL || process.env.NOW_REGION;
-
-    // Load existing database Or Create new
-    if (!isVercel && fs.existsSync(DB_PATH)) {
-        try {
-            const buffer = fs.readFileSync(DB_PATH);
-            db = new SQL.Database(buffer);
-            console.log('✅ Database loaded from file');
-        } catch (err) {
-            console.error('Failed to load DB file, creating new in-memory:', err);
-            db = new SQL.Database();
-        }
-    } else {
-        db = new SQL.Database();
-        console.log(isVercel ? '✅ Vercel: New in-memory database created' : '✅ New database created');
-    }
-
-    // Run schema (use exec for multiple statements)
-    const schemaPath = path.join(__dirname, 'schema.sql');
-    if (fs.existsSync(schemaPath)) {
-        const schema = fs.readFileSync(schemaPath, 'utf-8');
-        try {
-            db.exec(schema);
-            console.log('✅ Schema applied');
-        } catch (err) {
-            // Ignore "table already exists" errors
-            if (!err.message.includes('already exists')) {
-                console.error('Schema error:', err);
-            }
-        }
-    }
-
-    // Save to file (Only if not Vercel)
-    if (!isVercel) {
-        saveDatabase();
-    }
-
-    initialized = true;
-    return db;
-}
-
-/**
- * Save database to file
- */
-function saveDatabase() {
-    // Skip saving on Vercel/Read-only env
-    if (process.env.VERCEL || process.env.NOW_REGION) return;
-
-    if (db) {
-        try {
-            const data = db.export();
-            const buffer = Buffer.from(data);
-            fs.writeFileSync(DB_PATH, buffer);
-        } catch (err) {
-            console.error('Failed to save database:', err.message);
-        }
-    }
-}
-
-/**
- * Get database instance
- */
-function getDb() {
-    if (!db) {
-        throw new Error('Database not initialized. Call initializeDatabase() first.');
-    }
-    return db;
-}
-
-/**
- * Helper: Execute query and return results
- */
-function query(sql, params = []) {
-    if (!db) throw new Error('Database not initialized');
+    if (initialized) return;
 
     try {
-        const stmt = db.prepare(sql);
-        if (params.length > 0) {
-            stmt.bind(params);
+        const client = await pool.connect();
+
+        // Run Schema
+        const schemaPath = path.join(__dirname, 'schema.sql');
+        if (fs.existsSync(schemaPath)) {
+            const schema = fs.readFileSync(schemaPath, 'utf-8');
+            await client.query(schema);
+            console.log('✅ PostgreSQL Schema applied');
         }
 
-        const results = [];
-        while (stmt.step()) {
-            results.push(stmt.getAsObject());
-        }
-        stmt.free();
-        return results;
+        client.release();
+        initialized = true;
     } catch (err) {
-        console.error('Query error:', sql, err.message);
+        console.error('❌ Database Initialization Error:', err);
+    }
+}
+
+/**
+ * Execute query with parameters
+ */
+async function query(text, params = []) {
+    try {
+        const res = await pool.query(text, params);
+        return res.rows;
+    } catch (err) {
+        console.error('Query Error:', text, err.message);
         throw err;
     }
 }
 
 /**
- * Helper: Execute query and return first result
+ * Execute query and return one row
  */
-function queryOne(sql, params = []) {
-    const results = query(sql, params);
-    return results.length > 0 ? results[0] : null;
+async function queryOne(text, params = []) {
+    try {
+        const res = await pool.query(text, params);
+        return res.rows[0] || null;
+    } catch (err) {
+        console.error('QueryOne Error:', text, err.message);
+        throw err;
+    }
 }
 
 /**
- * Helper: Execute statement (INSERT/UPDATE/DELETE)
+ * Execute insert/update/delete (legacy wrapper)
+ * Returns { changes: rowCount, lastInsertRowid: id } if applicable
  */
-function run(sql, params = []) {
-    if (!db) throw new Error('Database not initialized');
-
+async function run(text, params = []) {
     try {
-        db.run(sql, params);
-        saveDatabase();
-
-        // Get last insert ID
-        const lastId = queryOne('SELECT last_insert_rowid() as id');
-
+        const res = await pool.query(text, params);
+        // Postgres returns modified rows if RETURNING is used, but for general 'run' compat:
         return {
-            changes: db.getRowsModified(),
-            lastInsertRowid: lastId ? lastId.id : null
+            changes: res.rowCount,
+            // Note: lastInsertRowid is NOT available by default in PG without RETURNING
+            // We handled this in specific DB methods below
         };
     } catch (err) {
-        console.error('Run error:', sql, err.message);
+        console.error('Run Error:', text, err.message);
         throw err;
     }
 }
@@ -155,41 +101,42 @@ function run(sql, params = []) {
 // User Operations
 // ============================================
 const UserDB = {
-    findByDiscordId: (discordId) => {
-        return queryOne('SELECT * FROM users WHERE discord_id = ?', [discordId]);
+    findByDiscordId: async (discordId) => {
+        return queryOne('SELECT * FROM users WHERE discord_id = $1', [discordId]);
     },
 
-    findById: (id) => {
-        return queryOne('SELECT * FROM users WHERE id = ?', [id]);
+    findById: async (id) => {
+        return queryOne('SELECT * FROM users WHERE id = $1', [id]);
     },
 
-    upsert: (profile) => {
-        const existing = UserDB.findByDiscordId(profile.id);
+    upsert: async (profile) => {
+        const discordId = profile.id || profile.discord_id;
+        const existing = await UserDB.findByDiscordId(discordId);
 
         if (existing) {
-            run(`
+            await pool.query(`
                 UPDATE users SET
-                    username = ?,
-                    discriminator = ?,
-                    global_name = ?,
-                    avatar = ?,
-                    email = ?,
-                    updated_at = datetime('now')
-                WHERE discord_id = ?
+                    username = $1,
+                    discriminator = $2,
+                    global_name = $3,
+                    avatar = $4,
+                    email = $5,
+                    updated_at = NOW()
+                WHERE discord_id = $6
             `, [
                 profile.username,
                 profile.discriminator || '0',
                 profile.global_name || profile.username,
                 profile.avatar,
                 profile.email || null,
-                profile.id
+                discordId
             ]);
         } else {
-            run(`
+            await pool.query(`
                 INSERT INTO users (discord_id, username, discriminator, global_name, avatar, email)
-                VALUES (?, ?, ?, ?, ?, ?)
+                VALUES ($1, $2, $3, $4, $5, $6)
             `, [
-                profile.id,
+                discordId,
                 profile.username,
                 profile.discriminator || '0',
                 profile.global_name || profile.username,
@@ -198,42 +145,42 @@ const UserDB = {
             ]);
         }
 
-        return UserDB.findByDiscordId(profile.id);
+        return UserDB.findByDiscordId(discordId);
     },
 
-    updateBalance: (userId, amount) => {
-        return run(`
+    updateBalance: async (userId, amount) => {
+        await pool.query(`
             UPDATE users 
-            SET balance = balance + ?, updated_at = datetime('now') 
-            WHERE id = ?
+            SET balance = balance + $1, updated_at = NOW() 
+            WHERE id = $2
         `, [amount, userId]);
     },
 
-    setBalance: (userId, balance) => {
-        return run(`
+    setBalance: async (userId, balance) => {
+        await pool.query(`
             UPDATE users 
-            SET balance = ?, updated_at = datetime('now') 
-            WHERE id = ?
+            SET balance = $1, updated_at = NOW() 
+            WHERE id = $2
         `, [balance, userId]);
     },
 
-    getAll: (limit = 100, offset = 0) => {
+    getAll: async (limit = 100, offset = 0) => {
         return query(`
             SELECT u.*, 
                    (SELECT COUNT(*) FROM subscriptions WHERE user_id = u.id AND status = 'active') as active_subs
             FROM users u
             ORDER BY u.created_at DESC
-            LIMIT ? OFFSET ?
+            LIMIT $1 OFFSET $2
         `, [limit, offset]);
     },
 
-    count: () => {
-        const result = queryOne('SELECT COUNT(*) as count FROM users');
-        return result ? result.count : 0;
+    count: async () => {
+        const result = await queryOne('SELECT COUNT(*) as count FROM users');
+        return parseInt(result?.count || 0);
     },
 
-    setAdmin: (userId, isAdmin) => {
-        return run('UPDATE users SET is_admin = ? WHERE id = ?', [isAdmin ? 1 : 0, userId]);
+    setAdmin: async (userId, isAdmin) => {
+        await pool.query('UPDATE users SET is_admin = $1 WHERE id = $2', [isAdmin ? 1 : 0, userId]);
     }
 };
 
@@ -241,36 +188,38 @@ const UserDB = {
 // Package Operations
 // ============================================
 const PackageDB = {
-    getActive: () => {
+    getActive: async () => {
         return query('SELECT * FROM packages WHERE is_active = 1 ORDER BY sort_order ASC');
     },
 
-    getAll: () => {
+    getAll: async () => {
         return query('SELECT * FROM packages ORDER BY sort_order ASC');
     },
 
-    findById: (id) => {
-        return queryOne('SELECT * FROM packages WHERE id = ?', [id]);
+    findById: async (id) => {
+        return queryOne('SELECT * FROM packages WHERE id = $1', [id]);
     },
 
-    create: (data) => {
-        return run(`
+    create: async (data) => {
+        const res = await pool.query(`
             INSERT INTO packages (name, duration_days, price, description, badge, color, is_popular, is_active, sort_order)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+            RETURNING *
         `, [data.name, data.duration_days, data.price, data.description, data.badge, data.color || '#3B82F6', data.is_popular || 0, data.is_active ?? 1, data.sort_order || 0]);
+        return res.rows[0];
     },
 
-    update: (id, data) => {
-        return run(`
+    update: async (id, data) => {
+        await pool.query(`
             UPDATE packages SET
-                name = ?, duration_days = ?, price = ?, description = ?,
-                badge = ?, color = ?, is_popular = ?, is_active = ?, sort_order = ?
-            WHERE id = ?
+                name = $1, duration_days = $2, price = $3, description = $4,
+                badge = $5, color = $6, is_popular = $7, is_active = $8, sort_order = $9
+            WHERE id = $10
         `, [data.name, data.duration_days, data.price, data.description, data.badge, data.color, data.is_popular, data.is_active, data.sort_order, id]);
     },
 
-    toggleActive: (id) => {
-        return run('UPDATE packages SET is_active = NOT is_active WHERE id = ?', [id]);
+    toggleActive: async (id) => {
+        await pool.query('UPDATE packages SET is_active = CASE WHEN is_active = 1 THEN 0 ELSE 1 END WHERE id = $1', [id]);
     }
 };
 
@@ -278,51 +227,54 @@ const PackageDB = {
 // Subscription Operations
 // ============================================
 const SubscriptionDB = {
-    getActiveByUserId: (userId) => {
+    getActiveByUserId: async (userId) => {
         return queryOne(`
             SELECT s.*, p.name as package_name, p.badge, p.duration_days
             FROM subscriptions s
             JOIN packages p ON s.package_id = p.id
-            WHERE s.user_id = ? AND s.status = 'active' AND s.end_date > datetime('now')
+            WHERE s.user_id = $1 AND s.status = 'active' AND s.end_date > NOW()
             ORDER BY s.end_date DESC
             LIMIT 1
         `, [userId]);
     },
 
-    getByUserId: (userId) => {
+    getByUserId: async (userId) => {
         return query(`
             SELECT s.*, p.name as package_name, p.badge
             FROM subscriptions s
             JOIN packages p ON s.package_id = p.id
-            WHERE s.user_id = ?
+            WHERE s.user_id = $1
             ORDER BY s.created_at DESC
         `, [userId]);
     },
 
-    create: (userId, packageId, endDate) => {
-        return run(`
+    create: async (userId, packageId, endDate) => {
+        // Handle Date object or string
+        const endDataStr = endDate instanceof Date ? endDate.toISOString() : endDate;
+        await pool.query(`
             INSERT INTO subscriptions (user_id, package_id, end_date)
-            VALUES (?, ?, ?)
-        `, [userId, packageId, endDate]);
+            VALUES ($1, $2, $3)
+        `, [userId, packageId, endDataStr]);
     },
 
-    extend: (subscriptionId, newEndDate) => {
-        return run('UPDATE subscriptions SET end_date = ? WHERE id = ?', [newEndDate, subscriptionId]);
+    extend: async (subscriptionId, newEndDate) => {
+        const endDataStr = newEndDate instanceof Date ? newEndDate.toISOString() : newEndDate;
+        await pool.query('UPDATE subscriptions SET end_date = $1 WHERE id = $2', [endDataStr, subscriptionId]);
     },
 
-    cancel: (subscriptionId) => {
-        return run("UPDATE subscriptions SET status = 'cancelled' WHERE id = ?", [subscriptionId]);
+    cancel: async (subscriptionId) => {
+        await pool.query("UPDATE subscriptions SET status = 'cancelled' WHERE id = $1", [subscriptionId]);
     },
 
-    expireOld: () => {
-        return run(`
+    expireOld: async () => {
+        await pool.query(`
             UPDATE subscriptions 
             SET status = 'expired' 
-            WHERE status = 'active' AND end_date <= datetime('now')
+            WHERE status = 'active' AND end_date <= NOW()
         `);
     },
 
-    getAll: (status = null, limit = 100, offset = 0) => {
+    getAll: async (status = null, limit = 100, offset = 0) => {
         if (status) {
             return query(`
                 SELECT s.*, p.name as package_name, p.badge, 
@@ -330,8 +282,8 @@ const SubscriptionDB = {
                 FROM subscriptions s
                 JOIN packages p ON s.package_id = p.id
                 JOIN users u ON s.user_id = u.id
-                WHERE s.status = ?
-                ORDER BY s.created_at DESC LIMIT ? OFFSET ?
+                WHERE s.status = $1
+                ORDER BY s.created_at DESC LIMIT $2 OFFSET $3
             `, [status, limit, offset]);
         }
         return query(`
@@ -340,16 +292,16 @@ const SubscriptionDB = {
             FROM subscriptions s
             JOIN packages p ON s.package_id = p.id
             JOIN users u ON s.user_id = u.id
-            ORDER BY s.created_at DESC LIMIT ? OFFSET ?
+            ORDER BY s.created_at DESC LIMIT $1 OFFSET $2
         `, [limit, offset]);
     },
 
-    countActive: () => {
-        const result = queryOne(`
+    countActive: async () => {
+        const result = await queryOne(`
             SELECT COUNT(*) as count FROM subscriptions 
-            WHERE status = 'active' AND end_date > datetime('now')
+            WHERE status = 'active' AND end_date > NOW()
         `);
-        return result ? result.count : 0;
+        return parseInt(result?.count || 0);
     }
 };
 
@@ -357,28 +309,28 @@ const SubscriptionDB = {
 // Status Configuration Operations
 // ============================================
 const StatusConfigDB = {
-    getByUserId: (userId) => {
-        return queryOne('SELECT * FROM status_configs WHERE user_id = ?', [userId]);
+    getByUserId: async (userId) => {
+        return queryOne('SELECT * FROM status_configs WHERE user_id = $1', [userId]);
     },
 
-    getByDiscordId: (discordId) => {
+    getByDiscordId: async (discordId) => {
         return queryOne(`
             SELECT sc.* FROM status_configs sc
             JOIN users u ON sc.user_id = u.id
-            WHERE u.discord_id = ?
+            WHERE u.discord_id = $1
         `, [discordId]);
     },
 
-    upsert: (userId, config) => {
-        const existing = StatusConfigDB.getByUserId(userId);
+    upsert: async (userId, config) => {
+        const existing = await StatusConfigDB.getByUserId(userId);
 
         if (existing) {
-            return run(`
+            await pool.query(`
                 UPDATE status_configs SET
-                    page1_text1 = ?, page1_text2 = ?, page1_text3 = ?, page1_image = ?,
-                    page2_text1 = ?, page2_text2 = ?, page2_text3 = ?, page2_image = ?,
-                    is_enabled = ?, updated_at = datetime('now')
-                WHERE user_id = ?
+                    page1_text1 = $1, page1_text2 = $2, page1_text3 = $3, page1_image = $4,
+                    page2_text1 = $5, page2_text2 = $6, page2_text3 = $7, page2_image = $8,
+                    is_enabled = $9, updated_at = NOW()
+                WHERE user_id = $10
             `, [
                 config.page1_text1 || '', config.page1_text2 || '', config.page1_text3 || '', config.page1_image || '',
                 config.page2_text1 || '', config.page2_text2 || '', config.page2_text3 || '', config.page2_image || '',
@@ -386,13 +338,13 @@ const StatusConfigDB = {
                 userId
             ]);
         } else {
-            return run(`
+            await pool.query(`
                 INSERT INTO status_configs (
                     user_id, 
                     page1_text1, page1_text2, page1_text3, page1_image,
                     page2_text1, page2_text2, page2_text3, page2_image,
                     is_enabled
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
             `, [
                 userId,
                 config.page1_text1 || '', config.page1_text2 || '', config.page1_text3 || '', config.page1_image || '',
@@ -402,11 +354,11 @@ const StatusConfigDB = {
         }
     },
 
-    toggleEnabled: (userId) => {
-        return run(`
+    toggleEnabled: async (userId) => {
+        await pool.query(`
             UPDATE status_configs 
-            SET is_enabled = NOT is_enabled, updated_at = datetime('now') 
-            WHERE user_id = ?
+            SET is_enabled = CASE WHEN is_enabled = 1 THEN 0 ELSE 1 END, updated_at = NOW() 
+            WHERE user_id = $1
         `, [userId]);
     }
 };
@@ -415,30 +367,32 @@ const StatusConfigDB = {
 // Topup Operations
 // ============================================
 const TopupDB = {
-    create: (userId, amount, reference, source = 'discord_bot') => {
-        return run(`
+    create: async (userId, amount, reference, source = 'discord_bot') => {
+        const res = await pool.query(`
             INSERT INTO topups (user_id, amount, reference, source)
-            VALUES (?, ?, ?, ?)
+            VALUES ($1, $2, $3, $4)
+            RETURNING id
         `, [userId, amount, reference, source]);
+        return res.rows[0].id;
     },
 
-    getByUserId: (userId, limit = 20) => {
-        return query('SELECT * FROM topups WHERE user_id = ? ORDER BY created_at DESC LIMIT ?', [userId, limit]);
+    getByUserId: async (userId, limit = 20) => {
+        return query('SELECT * FROM topups WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
     },
 
-    getAll: (limit = 100, offset = 0) => {
+    getAll: async (limit = 100, offset = 0) => {
         return query(`
             SELECT t.*, u.username, u.discord_id
             FROM topups t
             JOIN users u ON t.user_id = u.id
             ORDER BY t.created_at DESC
-            LIMIT ? OFFSET ?
+            LIMIT $1 OFFSET $2
         `, [limit, offset]);
     },
 
-    getTotalAmount: () => {
-        const result = queryOne('SELECT COALESCE(SUM(amount), 0) as total FROM topups');
-        return result ? result.total : 0;
+    getTotalAmount: async () => {
+        const result = await queryOne('SELECT COALESCE(SUM(amount), 0) as total FROM topups');
+        return parseInt(result?.total || 0);
     }
 };
 
@@ -446,15 +400,15 @@ const TopupDB = {
 // Transaction Operations
 // ============================================
 const TransactionDB = {
-    create: (userId, type, amount, description, balanceAfter, referenceId = null) => {
-        return run(`
+    create: async (userId, type, amount, description, balanceAfter, referenceId = null) => {
+        await pool.query(`
             INSERT INTO transactions (user_id, type, amount, description, balance_after, reference_id)
-            VALUES (?, ?, ?, ?, ?, ?)
+            VALUES ($1, $2, $3, $4, $5, $6)
         `, [userId, type, amount, description, balanceAfter, referenceId]);
     },
 
-    getByUserId: (userId, limit = 50) => {
-        return query('SELECT * FROM transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT ?', [userId, limit]);
+    getByUserId: async (userId, limit = 50) => {
+        return query('SELECT * FROM transactions WHERE user_id = $1 ORDER BY created_at DESC LIMIT $2', [userId, limit]);
     }
 };
 
@@ -462,22 +416,21 @@ const TransactionDB = {
 // Settings Operations
 // ============================================
 const SettingsDB = {
-    get: (key) => {
-        const row = queryOne('SELECT value FROM settings WHERE key = ?', [key]);
+    get: async (key) => {
+        const row = await queryOne('SELECT value FROM settings WHERE key = $1', [key]);
         return row ? row.value : null;
     },
 
-    set: (key, value) => {
-        const existing = SettingsDB.get(key);
-        if (existing !== null) {
-            return run('UPDATE settings SET value = ?, updated_at = datetime("now") WHERE key = ?', [value, key]);
-        } else {
-            return run('INSERT INTO settings (key, value) VALUES (?, ?)', [key, value]);
-        }
+    set: async (key, value) => {
+        // Upsert for settings
+        await pool.query(`
+            INSERT INTO settings (key, value) VALUES ($1, $2)
+            ON CONFLICT (key) DO UPDATE SET value = $2, updated_at = NOW()
+        `, [key, value]);
     },
 
-    getAll: () => {
-        const rows = query('SELECT * FROM settings');
+    getAll: async () => {
+        const rows = await query('SELECT * FROM settings');
         const settings = {};
         rows.forEach(row => settings[row.key] = row.value);
         return settings;
@@ -488,24 +441,30 @@ const SettingsDB = {
 // Stats for Dashboard
 // ============================================
 const StatsDB = {
-    getDashboardStats: () => {
+    getDashboardStats: async () => {
+        // Run in parallel for speed
+        const [totalUsers, activeSubscriptions, totalRevenue, packages] = await Promise.all([
+            UserDB.count(),
+            SubscriptionDB.countActive(),
+            TopupDB.getTotalAmount(),
+            PackageDB.getActive()
+        ]);
+
         return {
-            totalUsers: UserDB.count(),
-            activeSubscriptions: SubscriptionDB.countActive(),
-            totalRevenue: TopupDB.getTotalAmount(),
-            packages: PackageDB.getActive()
+            totalUsers,
+            activeSubscriptions,
+            totalRevenue,
+            packages
         };
     }
 };
 
 // Export everything
 module.exports = {
+    pool,
     initializeDatabase,
-    getDb,
-    saveDatabase,
     query,
     queryOne,
-    run,
     UserDB,
     PackageDB,
     SubscriptionDB,

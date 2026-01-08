@@ -66,29 +66,27 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
+const pgSession = require('connect-pg-simple')(session);
+const { pool, UserDB } = require('./database/db'); // Import pool for session store
+
+// ... (previous imports)
+
+// Rate limiting
 const limiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100, // limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100,
     message: { error: 'Too many requests, please try again later.' }
 });
 app.use('/api/', limiter);
 
-// Session
-let sessionStore;
-if (process.env.VERCEL || process.env.NOW_REGION || process.env.SESSION_MEMORY) {
-    sessionStore = new session.MemoryStore();
-    console.log('✅ Using MemoryStore for sessions');
-} else {
-    sessionStore = new FileStore({
-        path: './sessions',
-        ttl: 86400 * 7, // 7 days
-        retries: 0
-    });
-    console.log('✅ Using FileStore for sessions');
-}
-
+// Session Config (PostgreSQL)
 app.use(session({
-    store: sessionStore,
+    store: new pgSession({
+        pool: pool,                // Connection pool
+        tableName: 'session',      // Use defined table name (create this in schema or let it auto create)
+        createTableIfMissing: true, // Auto-create session table
+        pruneSessionInterval: 60 * 15 // Prune expired sessions every 15 min
+    }),
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
@@ -120,15 +118,15 @@ if (DISCORD_CLIENT_ID && DISCORD_CLIENT_SECRET) {
         clientSecret: DISCORD_CLIENT_SECRET,
         callbackURL: DISCORD_CALLBACK_URL,
         scope: ['identify', 'email']
-    }, (accessToken, refreshToken, profile, done) => {
+    }, async (accessToken, refreshToken, profile, done) => { // Async callback
         try {
             // Upsert user in database
-            const user = UserDB.upsert(profile);
+            const user = await UserDB.upsert(profile); // Await
 
             // Check if user should be admin
             const adminIds = (process.env.ADMIN_DISCORD_IDS || '').split(',').map(id => id.trim());
             if (adminIds.includes(profile.id) && !user.is_admin) {
-                UserDB.setAdmin(user.id, true);
+                await UserDB.setAdmin(user.id, true); // Await
                 user.is_admin = 1;
             }
 
@@ -143,9 +141,9 @@ passport.serializeUser((user, done) => {
     done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
+passport.deserializeUser(async (id, done) => {
     try {
-        const user = UserDB.findById(id);
+        const user = await UserDB.findById(id); // Await
         done(null, user);
     } catch (err) {
         done(err, null);
@@ -214,9 +212,9 @@ app.get('/auth/logout', (req, res) => {
 // ============================================
 
 // Get public stats
-app.get('/api/stats', (req, res) => {
+app.get('/api/stats', async (req, res) => {
     try {
-        const stats = StatsDB.getDashboardStats();
+        const stats = await StatsDB.getDashboardStats();
         res.json({
             users: stats.totalUsers,
             activeSubscriptions: stats.activeSubscriptions,
@@ -228,9 +226,9 @@ app.get('/api/stats', (req, res) => {
 });
 
 // Get packages
-app.get('/api/packages', (req, res) => {
+app.get('/api/packages', async (req, res) => {
     try {
-        const packages = PackageDB.getActive();
+        const packages = await PackageDB.getActive();
         res.json(packages);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -242,11 +240,11 @@ app.get('/api/packages', (req, res) => {
 // ============================================
 
 // Get current user
-app.get('/api/user', isAuthenticated, (req, res) => {
+app.get('/api/user', isAuthenticated, async (req, res) => {
     try {
-        const user = UserDB.findById(req.user.id);
-        const subscription = SubscriptionDB.getActiveByUserId(req.user.id);
-        const statusConfig = StatusConfigDB.getByUserId(req.user.id);
+        const user = await UserDB.findById(req.user.id);
+        const subscription = await SubscriptionDB.getActiveByUserId(req.user.id);
+        const statusConfig = await StatusConfigDB.getByUserId(req.user.id);
 
         res.json({
             ...user,
@@ -259,9 +257,9 @@ app.get('/api/user', isAuthenticated, (req, res) => {
 });
 
 // Get user's subscriptions
-app.get('/api/subscriptions', isAuthenticated, (req, res) => {
+app.get('/api/subscriptions', isAuthenticated, async (req, res) => {
     try {
-        const subscriptions = SubscriptionDB.getByUserId(req.user.id);
+        const subscriptions = await SubscriptionDB.getByUserId(req.user.id);
         res.json(subscriptions);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -269,11 +267,11 @@ app.get('/api/subscriptions', isAuthenticated, (req, res) => {
 });
 
 // Purchase a package
-app.post('/api/subscribe', isAuthenticated, (req, res) => {
+app.post('/api/subscribe', isAuthenticated, async (req, res) => {
     try {
         const { packageId } = req.body;
-        const user = UserDB.findById(req.user.id);
-        const pkg = PackageDB.findById(packageId);
+        const user = await UserDB.findById(req.user.id);
+        const pkg = await PackageDB.findById(packageId);
 
         if (!pkg) {
             return res.status(404).json({ error: 'Package not found' });
@@ -284,28 +282,28 @@ app.post('/api/subscribe', isAuthenticated, (req, res) => {
         }
 
         // Check existing subscription
-        const existingSub = SubscriptionDB.getActiveByUserId(user.id);
+        const existingSub = await SubscriptionDB.getActiveByUserId(user.id);
         let endDate;
 
         if (existingSub) {
             // Extend existing subscription
             const currentEnd = new Date(existingSub.end_date);
             endDate = new Date(currentEnd.getTime() + (pkg.duration_days * 24 * 60 * 60 * 1000));
-            SubscriptionDB.extend(existingSub.id, endDate.toISOString());
+            await SubscriptionDB.extend(existingSub.id, endDate.toISOString());
         } else {
             // Create new subscription
             endDate = new Date(Date.now() + (pkg.duration_days * 24 * 60 * 60 * 1000));
-            SubscriptionDB.create(user.id, pkg.id, endDate.toISOString());
+            await SubscriptionDB.create(user.id, pkg.id, endDate.toISOString());
         }
 
         // Deduct balance
-        UserDB.updateBalance(user.id, -pkg.price);
-        const updatedUser = UserDB.findById(user.id);
+        await UserDB.updateBalance(user.id, -pkg.price);
+        const updatedUser = await UserDB.findById(user.id);
 
         // Record transaction
-        TransactionDB.create(user.id, 'purchase', -pkg.price, `ซื้อแพ็คเกจ ${pkg.name}`, updatedUser.balance);
+        await TransactionDB.create(user.id, 'purchase', -pkg.price, `ซื้อแพ็คเกจ ${pkg.name}`, updatedUser.balance);
 
-        const newSub = SubscriptionDB.getActiveByUserId(user.id);
+        const newSub = await SubscriptionDB.getActiveByUserId(user.id);
 
         res.json({
             success: true,
@@ -319,14 +317,14 @@ app.post('/api/subscribe', isAuthenticated, (req, res) => {
 });
 
 // Get status config
-app.get('/api/status-config', isAuthenticated, (req, res) => {
+app.get('/api/status-config', isAuthenticated, async (req, res) => {
     try {
-        let config = StatusConfigDB.getByUserId(req.user.id);
+        let config = await StatusConfigDB.getByUserId(req.user.id);
 
         if (!config) {
             // Create default config
-            StatusConfigDB.upsert(req.user.id, {});
-            config = StatusConfigDB.getByUserId(req.user.id);
+            await StatusConfigDB.upsert(req.user.id, {});
+            config = await StatusConfigDB.getByUserId(req.user.id);
         }
 
         res.json(config);
@@ -336,12 +334,12 @@ app.get('/api/status-config', isAuthenticated, (req, res) => {
 });
 
 // Update status config
-app.put('/api/status-config', isAuthenticated, (req, res) => {
+app.put('/api/status-config', isAuthenticated, async (req, res) => {
     try {
         const config = req.body;
-        StatusConfigDB.upsert(req.user.id, config);
+        await StatusConfigDB.upsert(req.user.id, config);
 
-        const updated = StatusConfigDB.getByUserId(req.user.id);
+        const updated = await StatusConfigDB.getByUserId(req.user.id);
         res.json({ success: true, config: updated });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -349,9 +347,9 @@ app.put('/api/status-config', isAuthenticated, (req, res) => {
 });
 
 // Get transactions
-app.get('/api/transactions', isAuthenticated, (req, res) => {
+app.get('/api/transactions', isAuthenticated, async (req, res) => {
     try {
-        const transactions = TransactionDB.getByUserId(req.user.id);
+        const transactions = await TransactionDB.getByUserId(req.user.id);
         res.json(transactions);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -359,7 +357,7 @@ app.get('/api/transactions', isAuthenticated, (req, res) => {
 });
 
 // Save Discord Token
-app.put('/api/discord-token', isAuthenticated, (req, res) => {
+app.put('/api/discord-token', isAuthenticated, async (req, res) => {
     try {
         const { token } = req.body;
 
@@ -373,7 +371,7 @@ app.put('/api/discord-token', isAuthenticated, (req, res) => {
         }
 
         // Save token to status config (encrypted in production)
-        StatusConfigDB.upsert(req.user.id, {
+        await StatusConfigDB.upsert(req.user.id, {
             discord_token: token
         });
 
@@ -402,7 +400,7 @@ app.post('/api/topup/request', isAuthenticated, upload.single('slip'), async (re
         const user = req.user;
 
         // Create topup request record (pending status)
-        const topupId = TopupDB.create(user.id, parseInt(amount), `Pending slip #${Date.now()}`, 'website_pending');
+        const topupId = await TopupDB.create(user.id, parseInt(amount), `Pending slip #${Date.now()}`, 'website_pending');
 
         // Send to Discord Channel via Webhook
         const webhookUrl = process.env.DISCORD_TOPUP_WEBHOOK;
@@ -469,7 +467,7 @@ app.post('/api/topup/request', isAuthenticated, upload.single('slip'), async (re
 // ============================================
 
 // Webhook to receive topup from bot
-app.post('/api/topup/webhook', (req, res) => {
+app.post('/api/topup/webhook', async (req, res) => {
     try {
         const { secret, discordId, amount, reference } = req.body;
 
@@ -479,17 +477,17 @@ app.post('/api/topup/webhook', (req, res) => {
         }
 
         // Find user
-        const user = UserDB.findByDiscordId(discordId);
+        const user = await UserDB.findByDiscordId(discordId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
         // Add topup
-        TopupDB.create(user.id, amount, reference, 'discord_bot');
-        UserDB.updateBalance(user.id, amount);
+        await TopupDB.create(user.id, amount, reference, 'discord_bot');
+        await UserDB.updateBalance(user.id, amount);
 
-        const updatedUser = UserDB.findById(user.id);
-        TransactionDB.create(user.id, 'topup', amount, `เติมเงินผ่าน Discord Bot`, updatedUser.balance);
+        const updatedUser = await UserDB.findById(user.id);
+        await TransactionDB.create(user.id, 'topup', amount, `เติมเงินผ่าน Discord Bot`, updatedUser.balance);
 
         res.json({
             success: true,
@@ -501,7 +499,7 @@ app.post('/api/topup/webhook', (req, res) => {
 });
 
 // Bot fetches user's status config
-app.get('/api/bot/user-status/:discordId', (req, res) => {
+app.get('/api/bot/user-status/:discordId', async (req, res) => {
     try {
         const { discordId } = req.params;
         const authHeader = req.headers.authorization;
@@ -511,17 +509,17 @@ app.get('/api/bot/user-status/:discordId', (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        const user = UserDB.findByDiscordId(discordId);
+        const user = await UserDB.findByDiscordId(discordId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const subscription = SubscriptionDB.getActiveByUserId(user.id);
+        const subscription = await SubscriptionDB.getActiveByUserId(user.id);
         if (!subscription) {
             return res.status(404).json({ error: 'No active subscription' });
         }
 
-        const config = StatusConfigDB.getByUserId(user.id);
+        const config = await StatusConfigDB.getByUserId(user.id);
 
         res.json({
             user: {
@@ -546,7 +544,7 @@ app.get('/api/bot/user-status/:discordId', (req, res) => {
 });
 
 // Bot syncs status config from Discord to web
-app.post('/api/bot/sync-status/:discordId', (req, res) => {
+app.post('/api/bot/sync-status/:discordId', async (req, res) => {
     try {
         const { discordId } = req.params;
         const authHeader = req.headers.authorization;
@@ -555,13 +553,13 @@ app.post('/api/bot/sync-status/:discordId', (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        const user = UserDB.findByDiscordId(discordId);
+        const user = await UserDB.findByDiscordId(discordId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
         const statusData = req.body;
-        StatusConfigDB.upsert(user.id, {
+        await StatusConfigDB.upsert(user.id, {
             page1_text1: statusData.status_text_1 || '',
             page1_text2: '',
             page1_text3: '',
@@ -580,7 +578,7 @@ app.post('/api/bot/sync-status/:discordId', (req, res) => {
 });
 
 // Bot gets full user profile
-app.get('/api/bot/user-profile/:discordId', (req, res) => {
+app.get('/api/bot/user-profile/:discordId', async (req, res) => {
     try {
         const { discordId } = req.params;
         const authHeader = req.headers.authorization;
@@ -589,14 +587,14 @@ app.get('/api/bot/user-profile/:discordId', (req, res) => {
             return res.status(403).json({ error: 'Unauthorized' });
         }
 
-        const user = UserDB.findByDiscordId(discordId);
+        const user = await UserDB.findByDiscordId(discordId);
         if (!user) {
             return res.status(404).json({ error: 'User not found' });
         }
 
-        const subscription = SubscriptionDB.getActiveByUserId(user.id);
-        const statusConfig = StatusConfigDB.getByUserId(user.id);
-        const transactions = TransactionDB.getByUserId(user.id, 10);
+        const subscription = await SubscriptionDB.getActiveByUserId(user.id);
+        const statusConfig = await StatusConfigDB.getByUserId(user.id);
+        const transactions = await TransactionDB.getByUserId(user.id, 10);
 
         res.json({
             user: {
@@ -640,9 +638,9 @@ app.get('/api/bot/verify', (req, res) => {
 // ============================================
 
 // Get admin dashboard stats
-app.get('/api/admin/stats', isAdmin, (req, res) => {
+app.get('/api/admin/stats', isAdmin, async (req, res) => {
     try {
-        const stats = StatsDB.getDashboardStats();
+        const stats = await StatsDB.getDashboardStats();
         res.json(stats);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -650,11 +648,11 @@ app.get('/api/admin/stats', isAdmin, (req, res) => {
 });
 
 // Get all users
-app.get('/api/admin/users', isAdmin, (req, res) => {
+app.get('/api/admin/users', isAdmin, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 100;
         const offset = parseInt(req.query.offset) || 0;
-        const users = UserDB.getAll(limit, offset);
+        const users = await UserDB.getAll(limit, offset);
         res.json(users);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -662,15 +660,15 @@ app.get('/api/admin/users', isAdmin, (req, res) => {
 });
 
 // Update user balance
-app.put('/api/admin/users/:id/balance', isAdmin, (req, res) => {
+app.put('/api/admin/users/:id/balance', isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { balance } = req.body;
 
-        UserDB.setBalance(id, balance);
-        const user = UserDB.findById(id);
+        await UserDB.setBalance(id, balance);
+        const user = await UserDB.findById(id);
 
-        TransactionDB.create(id, 'adjustment', balance - (user.balance - balance), 'Admin adjustment', balance);
+        await TransactionDB.create(id, 'adjustment', balance - (user.balance - balance), 'Admin adjustment', balance);
 
         res.json({ success: true, user });
     } catch (err) {
@@ -679,13 +677,13 @@ app.put('/api/admin/users/:id/balance', isAdmin, (req, res) => {
 });
 
 // Toggle user admin status
-app.put('/api/admin/users/:id/admin', isAdmin, (req, res) => {
+app.put('/api/admin/users/:id/admin', isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
         const { isAdmin: adminStatus } = req.body;
 
-        UserDB.setAdmin(id, adminStatus);
-        const user = UserDB.findById(id);
+        await UserDB.setAdmin(id, adminStatus);
+        const user = await UserDB.findById(id);
 
         res.json({ success: true, user });
     } catch (err) {
@@ -694,9 +692,9 @@ app.put('/api/admin/users/:id/admin', isAdmin, (req, res) => {
 });
 
 // Get all packages (including inactive)
-app.get('/api/admin/packages', isAdmin, (req, res) => {
+app.get('/api/admin/packages', isAdmin, async (req, res) => {
     try {
-        const packages = PackageDB.getAll();
+        const packages = await PackageDB.getAll();
         res.json(packages);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -704,10 +702,10 @@ app.get('/api/admin/packages', isAdmin, (req, res) => {
 });
 
 // Create package
-app.post('/api/admin/packages', isAdmin, (req, res) => {
+app.post('/api/admin/packages', isAdmin, async (req, res) => {
     try {
-        const result = PackageDB.create(req.body);
-        const packages = PackageDB.getAll();
+        const result = await PackageDB.create(req.body);
+        const packages = await PackageDB.getAll();
         res.json({ success: true, packages });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -715,11 +713,11 @@ app.post('/api/admin/packages', isAdmin, (req, res) => {
 });
 
 // Update package
-app.put('/api/admin/packages/:id', isAdmin, (req, res) => {
+app.put('/api/admin/packages/:id', isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        PackageDB.update(id, req.body);
-        const pkg = PackageDB.findById(id);
+        await PackageDB.update(id, req.body);
+        const pkg = await PackageDB.findById(id);
         res.json({ success: true, package: pkg });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -727,11 +725,11 @@ app.put('/api/admin/packages/:id', isAdmin, (req, res) => {
 });
 
 // Toggle package active
-app.put('/api/admin/packages/:id/toggle', isAdmin, (req, res) => {
+app.put('/api/admin/packages/:id/toggle', isAdmin, async (req, res) => {
     try {
         const { id } = req.params;
-        PackageDB.toggleActive(id);
-        const pkg = PackageDB.findById(id);
+        await PackageDB.toggleActive(id);
+        const pkg = await PackageDB.findById(id);
         res.json({ success: true, package: pkg });
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -739,13 +737,13 @@ app.put('/api/admin/packages/:id/toggle', isAdmin, (req, res) => {
 });
 
 // Get all subscriptions
-app.get('/api/admin/subscriptions', isAdmin, (req, res) => {
+app.get('/api/admin/subscriptions', isAdmin, async (req, res) => {
     try {
         const status = req.query.status || null;
         const limit = parseInt(req.query.limit) || 100;
         const offset = parseInt(req.query.offset) || 0;
 
-        const subscriptions = SubscriptionDB.getAll(status, limit, offset);
+        const subscriptions = await SubscriptionDB.getAll(status, limit, offset);
         res.json(subscriptions);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -753,12 +751,12 @@ app.get('/api/admin/subscriptions', isAdmin, (req, res) => {
 });
 
 // Get all topups
-app.get('/api/admin/topups', isAdmin, (req, res) => {
+app.get('/api/admin/topups', isAdmin, async (req, res) => {
     try {
         const limit = parseInt(req.query.limit) || 100;
         const offset = parseInt(req.query.offset) || 0;
 
-        const topups = TopupDB.getAll(limit, offset);
+        const topups = await TopupDB.getAll(limit, offset);
         res.json(topups);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -766,15 +764,15 @@ app.get('/api/admin/topups', isAdmin, (req, res) => {
 });
 
 // Manual topup
-app.post('/api/admin/topup', isAdmin, (req, res) => {
+app.post('/api/admin/topup', isAdmin, async (req, res) => {
     try {
         const { userId, amount, reference } = req.body;
 
-        TopupDB.create(userId, amount, reference || 'Admin manual', 'admin');
-        UserDB.updateBalance(userId, amount);
+        await TopupDB.create(userId, amount, reference || 'Admin manual', 'admin');
+        await UserDB.updateBalance(userId, amount);
 
-        const user = UserDB.findById(userId);
-        TransactionDB.create(userId, 'topup', amount, 'Admin manual topup', user.balance);
+        const user = await UserDB.findById(userId);
+        await TransactionDB.create(userId, 'topup', amount, 'Admin manual topup', user.balance);
 
         res.json({ success: true, newBalance: user.balance });
     } catch (err) {
@@ -793,7 +791,7 @@ async function startServer() {
         console.log('✅ Database connected');
 
         // Expire old subscriptions
-        SubscriptionDB.expireOld();
+        await SubscriptionDB.expireOld();
 
         // Check Discord OAuth config
         if (!DISCORD_CLIENT_ID || !DISCORD_CLIENT_SECRET) {

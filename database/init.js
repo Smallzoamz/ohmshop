@@ -12,17 +12,17 @@ async function main() {
         await initializeDatabase();
 
         // Verify tables created
-        const tables = query(`
-            SELECT name FROM sqlite_master 
-            WHERE type='table' AND name NOT LIKE 'sqlite_%'
-            ORDER BY name
+        const tables = await query(`
+            SELECT table_name as name FROM information_schema.tables 
+            WHERE table_schema = 'public' 
+            ORDER BY table_name
         `);
 
         console.log('\n📋 Tables created:');
         tables.forEach(t => console.log(`   ✓ ${t.name}`));
 
         // Show default packages
-        const packages = query('SELECT * FROM packages');
+        const packages = await query('SELECT * FROM packages');
         console.log('\n📦 Default packages:');
         packages.forEach(p => {
             console.log(`   ${p.badge} ${p.name}: ${p.duration_days} วัน = ฿${p.price}`);
