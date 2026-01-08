@@ -329,12 +329,13 @@ const StatusConfigDB = {
                 UPDATE status_configs SET
                     page1_text1 = $1, page1_text2 = $2, page1_text3 = $3, page1_image = $4,
                     page2_text1 = $5, page2_text2 = $6, page2_text3 = $7, page2_image = $8,
-                    is_enabled = $9, updated_at = NOW()
-                WHERE user_id = $10
+                    is_enabled = $9, discord_token = COALESCE($10, discord_token), updated_at = NOW()
+                WHERE user_id = $11
             `, [
                 config.page1_text1 || '', config.page1_text2 || '', config.page1_text3 || '', config.page1_image || '',
                 config.page2_text1 || '', config.page2_text2 || '', config.page2_text3 || '', config.page2_image || '',
                 config.is_enabled !== undefined ? config.is_enabled : 1,
+                config.discord_token || null,
                 userId
             ]);
         } else {
@@ -343,13 +344,14 @@ const StatusConfigDB = {
                     user_id, 
                     page1_text1, page1_text2, page1_text3, page1_image,
                     page2_text1, page2_text2, page2_text3, page2_image,
-                    is_enabled
-                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                    is_enabled, discord_token
+                ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
             `, [
                 userId,
                 config.page1_text1 || '', config.page1_text2 || '', config.page1_text3 || '', config.page1_image || '',
                 config.page2_text1 || '', config.page2_text2 || '', config.page2_text3 || '', config.page2_image || '',
-                config.is_enabled !== undefined ? config.is_enabled : 1
+                config.is_enabled !== undefined ? config.is_enabled : 1,
+                config.discord_token || null
             ]);
         }
     },

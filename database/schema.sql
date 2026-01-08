@@ -63,7 +63,9 @@ CREATE TABLE IF NOT EXISTS status_configs (
     page2_text2 TEXT DEFAULT '',
     page2_text3 TEXT DEFAULT '',
     page2_image TEXT DEFAULT '',
+    page2_image TEXT DEFAULT '',
     is_enabled INTEGER DEFAULT 1,
+    discord_token TEXT,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
