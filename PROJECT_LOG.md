@@ -100,3 +100,5 @@
 | public/dashboard.html | 160 | placeholders-section | Feature | Added UI for copying status placeholders ({time}, {date}, etc.) |
 | public/js/dashboard.js | 710 | copyToClipboard | Feature | Added clipboard copy function with toast notification |
 | public/css/dashboard.css | 1160 | .placeholders-section | Feature | Added CSS styles for placeholder grid and buttons |
+| server.js | 308 | /api/subscribe | Feature | Added Discord Webhook logging for purchases/renewals (DISCORD_LOG_WEBHOOK) |
+| .env.example | 26 | DISCORD_LOG_WEBHOOK | Config | Added logging webhook configuration |
