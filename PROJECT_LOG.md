@@ -102,3 +102,8 @@
 | public/css/dashboard.css | 1160 | .placeholders-section | Feature | Added CSS styles for placeholder grid and buttons |
 | server.js | 308 | /api/subscribe | Feature | Added Discord Webhook logging for purchases/renewals (DISCORD_LOG_WEBHOOK) |
 | .env.example | 26 | DISCORD_LOG_WEBHOOK | Config | Added logging webhook configuration |
+| shop_system.py | 700 | TopupApprovalView | Feature | Added Approve/Reject buttons handling |
+| bot.py | 36 | Webhook Listener | Feature | Added webhook message listener to trigger approval view |
+| server.js | 400 | /api/topup/request | Feature | Added Topup ID to webhook embed for bot parsing |
+| server.js | 450 | /api/topup/pending | Endpoint | Added endpoint for polling pending topups |
+| public/js/dashboard.js | 715 | startTopupWatcher | Feature | Added real-time polling to notify Approved/Rejected status |
