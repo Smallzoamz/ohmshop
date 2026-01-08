@@ -40,6 +40,24 @@
                     </ul>
 
                     <div class="nav-actions">
+                        <button class="theme-toggle" id="themeToggle" title="สลับธีม">
+                            <svg class="sun-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="5"></circle>
+                                <line x1="12" y1="1" x2="12" y2="3"></line>
+                                <line x1="12" y1="21" x2="12" y2="23"></line>
+                                <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+                                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                                <line x1="1" y1="12" x2="3" y2="12"></line>
+                                <line x1="21" y1="12" x2="23" y2="12"></line>
+                                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+                                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                            </svg>
+                            <svg class="moon-icon" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                                stroke="currentColor" stroke-width="2">
+                                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                            </svg>
+                        </button>
                         <div class="user-menu" id="userMenu">
                             <img src="" alt="" class="user-avatar" id="userAvatar">
                             <span class="user-name" id="userName">Loading...</span>
@@ -456,6 +474,32 @@
             </div>
         </div>
     </div>
+
+    <!-- Footer -->
+    <footer class="footer dashboard-footer">
+        <div class="footer-wave">
+            <!-- Layer 1: Main Waves -->
+            <svg class="wave-layer-1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100"
+                preserveAspectRatio="none">
+                <path
+                    d="M0,50 Q90,10 180,50 T360,50 T540,50 T720,50 T900,50 T1080,50 T1260,50 T1440,50 T1620,50 T1800,50 T1980,50 T2160,50 T2340,50 T2520,50 T2700,50 T2880,50 V100 H0 Z"
+                    class="shape-fill"></path>
+            </svg>
+            <!-- Layer 2: Shadow Waves -->
+            <svg class="wave-layer-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 100"
+                preserveAspectRatio="none">
+                <path
+                    d="M0,55 Q100,15 200,55 T400,55 T600,55 T800,55 T1000,55 T1200,55 T1440,55 T1640,55 T1840,55 T2040,55 T2240,55 T2440,55 T2640,55 T2880,55 V100 H0 Z"
+                    class="shape-fill"></path>
+            </svg>
+        </div>
+        <div class="container">
+            <div class="footer-bottom">
+                <p class="footer-copyright">© 2026 OHM SHOP. All rights reserved.</p>
+                <p class="footer-credit">Made with ❤️ by <strong>Bonchon-Studio</strong></p>
+            </div>
+        </div>
+    </footer>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>

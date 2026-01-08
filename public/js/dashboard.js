@@ -15,11 +15,33 @@ let statusConfig = null;
 // DOM Ready
 // ============================================
 document.addEventListener('DOMContentLoaded', async () => {
+    initTheme();
     await checkAuthentication();
     initTabs();
     initCharCounters();
     initImagePreviews();
 });
+
+// ============================================
+// Theme Toggle (Dark/Light Mode)
+// ============================================
+function initTheme() {
+    const themeToggle = document.getElementById('themeToggle');
+    const savedTheme = localStorage.getItem('theme') || 'light';
+
+    // Apply saved theme
+    document.documentElement.setAttribute('data-theme', savedTheme);
+
+    if (!themeToggle) return;
+
+    themeToggle.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+    });
+}
 
 // ============================================
 // Authentication Check
