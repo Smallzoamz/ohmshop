@@ -67,7 +67,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // Rate limiting
 const pgSession = require('connect-pg-simple')(session);
-const { pool, UserDB } = require('./database/db'); // Import pool for session store
+const { pool } = require('./database/db'); // Import pool for session store
 
 // ... (previous imports)
 
