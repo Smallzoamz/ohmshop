@@ -308,6 +308,44 @@ app.post('/api/subscribe', isAuthenticated, async (req, res) => {
 
         const newSub = await SubscriptionDB.getActiveByUserId(user.id);
 
+        // ============================================
+        // Send Log to Discord
+        // ============================================
+        try {
+            const logWebhook = process.env.DISCORD_LOG_WEBHOOK || process.env.DISCORD_TOPUP_WEBHOOK;
+            if (logWebhook) {
+                const fetch = (await import('node-fetch')).default;
+
+                const embed = {
+                    title: existingSub ? '🔄 ต่ออายุสำเร็จ (Renewal)' : '📦 ซื้อสินค้าสำเร็จ (New Purchase)',
+                    color: existingSub ? 0x3BA55C : 0x5865F2, // Green for Renew, Blurple for New
+                    fields: [
+                        { name: '👤 ลูกค้า', value: `${user.global_name || user.username} (\`${user.username}\`)`, inline: true },
+                        { name: '📦 สินค้า', value: pkg.name, inline: true },
+                        { name: '💰 ราคา', value: `฿${pkg.price.toLocaleString()}`, inline: true },
+                        { name: '⏳ วันที่ได้รับ', value: `${pkg.duration_days} วัน`, inline: true },
+                        { name: '💳 ยอดเงินคงเหลือ', value: `฿${updatedUser.balance.toLocaleString()}`, inline: true },
+                        { name: '📅 หมดอายุ', value: `<t:${Math.floor(endDate.getTime() / 1000)}:f>`, inline: true }
+                    ],
+                    thumbnail: { url: user.avatar ? `https://cdn.discordapp.com/avatars/${user.discord_id}/${user.avatar}.png` : null },
+                    footer: { text: `User ID: ${user.id} • ${new Date().toLocaleString('th-TH')}`, icon_url: "https://media.discordapp.net/attachments/1206630006768341052/1230188044737155122/bonchon_logo.png" },
+                    timestamp: new Date().toISOString()
+                };
+
+                await fetch(logWebhook, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        username: 'OHM Shop Logs',
+                        avatar_url: 'https://media.discordapp.net/attachments/1206630006768341052/1230188044737155122/bonchon_logo.png',
+                        embeds: [embed]
+                    })
+                });
+            }
+        } catch (logErr) {
+            console.error('Failed to send Discord Log:', logErr);
+        }
+
         res.json({
             success: true,
             message: existingSub ? 'Subscription extended' : 'Subscription created',
