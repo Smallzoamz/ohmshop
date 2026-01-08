@@ -33,12 +33,16 @@ CREATE TABLE IF NOT EXISTS packages (
 );
 
 -- Default Packages Data
+-- Ensure Uniqueness
+CREATE UNIQUE INDEX IF NOT EXISTS idx_packages_unique ON packages(name, duration_days);
+
+-- Default Packages Data
 INSERT INTO packages (name, duration_days, price, description, badge, is_popular, sort_order)
 VALUES
 ('Basic', 7, 10, 'เหมาะสำหรับทดลองใช้งาน', '🥉', 0, 1),
 ('Standard', 15, 15, 'คุ้มค่าที่สุด!', '🥈', 1, 2),
 ('Premium', 30, 30, 'สำหรับผู้ใช้งานจริงจัง', '🥇', 0, 3)
-ON CONFLICT DO NOTHING;
+ON CONFLICT (name, duration_days) DO NOTHING;
 
 -- Subscriptions Table
 CREATE TABLE IF NOT EXISTS subscriptions (
