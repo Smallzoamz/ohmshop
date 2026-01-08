@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Admin Panel - จัดการระบบ">
+    <title>Admin Panel - OHM SHOP</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/admin.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E⚙️%3C/text%3E%3C/svg%3E">
+</head>
+
+<body class="admin-body">
+    <!-- Sidebar -->
+    <aside class="admin-sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <a href="/" class="logo">
+                <div class="logo-icon">⚙️</div>
+                <span>Admin</span>
+            </a>
+        </div>
+
+        <nav class="sidebar-nav">
+            <a href="#" class="nav-item active" data-section="dashboard">
+                <span class="nav-icon">📊</span>
+                <span class="nav-text">Dashboard</span>
+            </a>
+            <a href="#" class="nav-item" data-section="users">
+                <span class="nav-icon">👥</span>
+                <span class="nav-text">Users</span>
+            </a>
+            <a href="#" class="nav-item" data-section="packages">
+                <span class="nav-icon">📦</span>
+                <span class="nav-text">Packages</span>
+            </a>
+            <a href="#" class="nav-item" data-section="subscriptions">
+                <span class="nav-icon">⭐</span>
+                <span class="nav-text">Subscriptions</span>
+            </a>
+            <a href="#" class="nav-item" data-section="topups">
+                <span class="nav-icon">💰</span>
+                <span class="nav-text">Topups</span>
+            </a>
+        </nav>
+
+        <div class="sidebar-footer">
+            <a href="/dashboard.html" class="nav-item">
+                <span class="nav-icon">🏠</span>
+                <span class="nav-text">User Dashboard</span>
+            </a>
+            <a href="/auth/logout" class="nav-item">
+                <span class="nav-icon">🚪</span>
+                <span class="nav-text">Logout</span>
+            </a>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="admin-main">
+        <!-- Header -->
+        <header class="admin-header">
+            <button class="sidebar-toggle" id="sidebarToggle">☰</button>
+            <h1 class="page-title" id="pageTitle">Dashboard</h1>
+            <div class="admin-user">
+                <img src="" alt="" id="adminAvatar" class="admin-avatar">
+                <span id="adminName">Admin</span>
+            </div>
+        </header>
+
+        <!-- Dashboard Section -->
+        <section class="admin-section active" id="section-dashboard">
+            <div class="stats-grid admin-stats">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="statTotalUsers">0</div>
+                    <div class="stat-label">Total Users</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">⭐</div>
+                    <div class="stat-value" id="statActiveSubs">0</div>
+                    <div class="stat-label">Active Subscriptions</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value" id="statTotalRevenue">฿0</div>
+                    <div class="stat-label">Total Revenue</div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>📦 Packages Overview</h3>
+                </div>
+                <div class="card-body" id="packagesOverview">
+                    <!-- Packages stats -->
+                </div>
+            </div>
+        </section>
+
+        <!-- Users Section -->
+        <section class="admin-section" id="section-users">
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>👥 All Users</h3>
+                    <button class="btn btn-sm btn-primary" onclick="loadUsers()">🔄 Refresh</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Discord ID</th>
+                                    <th>Balance</th>
+                                    <th>Active Subs</th>
+                                    <th>Admin</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="usersTable">
+                                <tr>
+                                    <td colspan="6" class="no-data">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Packages Section -->
+        <section class="admin-section" id="section-packages">
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>📦 Manage Packages</h3>
+                    <button class="btn btn-sm btn-primary" onclick="showAddPackageModal()">➕ Add Package</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>Badge</th>
+                                    <th>Name</th>
+                                    <th>Duration</th>
+                                    <th>Price</th>
+                                    <th>Status</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody id="packagesTable">
+                                <tr>
+                                    <td colspan="6" class="no-data">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Subscriptions Section -->
+        <section class="admin-section" id="section-subscriptions">
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>⭐ All Subscriptions</h3>
+                    <div class="header-actions">
+                        <select id="subStatusFilter" onchange="loadSubscriptions()">
+                            <option value="">All Status</option>
+                            <option value="active">Active</option>
+                            <option value="expired">Expired</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                        <button class="btn btn-sm btn-primary" onclick="loadSubscriptions()">🔄 Refresh</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Package</th>
+                                    <th>Status</th>
+                                    <th>End Date</th>
+                                    <th>Created</th>
+                                </tr>
+                            </thead>
+                            <tbody id="subscriptionsTable">
+                                <tr>
+                                    <td colspan="5" class="no-data">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Topups Section -->
+        <section class="admin-section" id="section-topups">
+            <div class="admin-card">
+                <div class="card-header">
+                    <h3>💰 Topup History</h3>
+                    <button class="btn btn-sm btn-primary" onclick="showManualTopupModal()">➕ Manual Topup</button>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="admin-table">
+                            <thead>
+                                <tr>
+                                    <th>User</th>
+                                    <th>Amount</th>
+                                    <th>Reference</th>
+                                    <th>Source</th>
+                                    <th>Date</th>
+                                </tr>
+                            </thead>
+                            <tbody id="topupsTable">
+                                <tr>
+                                    <td colspan="5" class="no-data">Loading...</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Balance Edit Modal -->
+    <div class="modal" id="balanceModal">
+        <div class="modal-overlay" onclick="closeBalanceModal()"></div>
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>💰 Edit Balance</h3>
+                <button class="modal-close" onclick="closeBalanceModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="editUserId">
+                <div class="form-group">
+                    <label>Current Balance</label>
+                    <input type="text" id="currentBalance" class="form-input" readonly>
+                </div>
+                <div class="form-group">
+                    <label>New Balance</label>
+                    <input type="number" id="newBalance" class="form-input" min="0">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeBalanceModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="saveBalance()">Save</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Manual Topup Modal -->
+    <div class="modal" id="topupModal">
+        <div class="modal-overlay" onclick="closeTopupModal()"></div>
+        <div class="modal-content modal-sm">
+            <div class="modal-header">
+                <h3>➕ Manual Topup</h3>
+                <button class="modal-close" onclick="closeTopupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>User ID</label>
+                    <input type="number" id="topupUserId" class="form-input" placeholder="Enter user ID">
+                </div>
+                <div class="form-group">
+                    <label>Amount (THB)</label>
+                    <input type="number" id="topupAmount" class="form-input" min="1">
+                </div>
+                <div class="form-group">
+                    <label>Reference (Optional)</label>
+                    <input type="text" id="topupReference" class="form-input" placeholder="e.g. Manual admin topup">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeTopupModal()">Cancel</button>
+                <button class="btn btn-primary" onclick="processManualTopup()">Add Topup</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/security.js"></script>
+    <script src="js/admin.js"></script>
+</body>
+
+</html>

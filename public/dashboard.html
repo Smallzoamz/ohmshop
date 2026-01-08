@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="แดชบอร์ด - จัดการสถานะสตรีมมิ่งของคุณ">
+    <title>แดชบอร์ด - OHM SHOP</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎮%3C/text%3E%3C/svg%3E">
+</head>
+
+<body class="dashboard-body">
+    <!-- Header -->
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🎮</div>
+                    <span>OHM<span class="text-gradient">SHOP</span></span>
+                </a>
+
+                <nav class="nav">
+                    <ul class="nav-links">
+                        <li><a href="/" class="nav-link">หน้าหลัก</a></li>
+                        <li><a href="/dashboard.html" class="nav-link active">แดชบอร์ด</a></li>
+                    </ul>
+
+                    <div class="nav-actions">
+                        <div class="user-menu" id="userMenu">
+                            <img src="" alt="" class="user-avatar" id="userAvatar">
+                            <span class="user-name" id="userName">Loading...</span>
+                            <a href="/admin.html" class="btn btn-sm btn-admin hidden" id="adminPanelBtn">
+                                ⚙️ Admin Panel
+                            </a>
+                            <button class="logout-btn" onclick="logout()">ออกจากระบบ</button>
+                        </div>
+                    </div>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="dashboard-main">
+        <div class="container">
+            <!-- Profile Section -->
+            <section class="profile-section">
+                <div class="profile-card">
+                    <div class="profile-avatar">
+                        <img src="" alt="" id="profileAvatar">
+                    </div>
+                    <div class="profile-info">
+                        <h2 class="profile-name" id="profileName">Loading...</h2>
+                        <p class="profile-discord" id="profileDiscord">@username</p>
+                    </div>
+                    <div class="profile-balance">
+                        <div class="balance-label">ยอดเงินคงเหลือ</div>
+                        <div class="balance-value">฿<span id="userBalance">0</span></div>
+                        <button class="btn btn-sm btn-secondary" onclick="showTopupModal()">
+                            💰 เติมเงิน
+                        </button>
+                    </div>
+                    <div class="profile-expiry" id="profileExpiry">
+                        <div class="expiry-label">📅 สถานะหมดอายุ</div>
+                        <div class="expiry-value" id="profileExpiryDate">-</div>
+                        <div class="expiry-remaining" id="profileExpiryRemaining">ยังไม่มีแพ็คเกจ</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Subscription Section -->
+            <section class="subscription-section">
+                <div class="section-header-inline">
+                    <h3>📦 แพ็คเกจปัจจุบัน</h3>
+                </div>
+
+                <div class="subscription-card" id="subscriptionCard">
+                    <div class="sub-no-active" id="noSubscription">
+                        <div class="no-sub-icon">📭</div>
+                        <h4>ยังไม่มีแพ็คเกจ</h4>
+                        <p>คุณยังไม่ได้สมัครใช้บริการ เลือกแพ็คเกจเพื่อเริ่มต้นใช้งาน</p>
+                        <button class="btn btn-primary" onclick="showPackageModal()">
+                            🛒 ซื้อแพ็คเกจ
+                        </button>
+                    </div>
+
+                    <div class="sub-active hidden" id="activeSubscription">
+                        <div class="sub-badge" id="subBadge">🥈</div>
+                        <div class="sub-info">
+                            <div class="sub-name" id="subName">Standard</div>
+                            <div class="sub-status">
+                                <span class="status-dot active"></span>
+                                <span>กำลังใช้งาน</span>
+                            </div>
+                        </div>
+                        <div class="sub-expiry">
+                            <div class="expiry-label">หมดอายุ</div>
+                            <div class="expiry-date" id="subExpiry">-</div>
+                            <div class="expiry-days" id="subDaysLeft">- วัน</div>
+                        </div>
+                        <button class="btn btn-secondary btn-sm" onclick="showPackageModal()">
+                            🔄 ต่ออายุ
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Status Editor Section -->
+            <section class="status-editor-section" id="statusEditorSection">
+                <div class="section-header-inline">
+                    <h3>🎨 ตั้งค่าสถานะ</h3>
+                    <div class="status-toggle">
+                        <label class="toggle">
+                            <input type="checkbox" id="statusEnabled" checked>
+                            <span class="toggle-slider"></span>
+                        </label>
+                        <span>เปิดใช้งานสถานะ</span>
+                    </div>
+                </div>
+
+                <div class="status-editor">
+                    <!-- Token Input Section -->
+                    <div class="token-section">
+                        <div class="token-header">
+                            <h4>🔐 Discord Token</h4>
+                            <button class="btn btn-sm btn-secondary" onclick="showTokenHelpModal()">
+                                ❓ วิธีหา Token
+                            </button>
+                        </div>
+                        <div class="token-input-group">
+                            <input type="password" id="discordToken" class="form-input token-input"
+                                placeholder="ใส่ Discord Token ของคุณที่นี่...">
+                            <button class="btn btn-sm btn-secondary toggle-token-btn" onclick="toggleTokenVisibility()">
+                                👁️
+                            </button>
+                            <button class="btn btn-sm btn-primary" onclick="saveToken()">
+                                💾 บันทึก
+                            </button>
+                        </div>
+                        <div class="token-status" id="tokenStatus">
+                            <span class="token-not-set">⚠️ ยังไม่ได้ตั้งค่า Token</span>
+                        </div>
+                    </div>
+
+                    <!-- Tab Navigation -->
+                    <div class="status-tabs">
+                        <button class="status-tab active" data-tab="page1">
+                            📄 หน้าที่ 1
+                        </button>
+                        <button class="status-tab" data-tab="page2">
+                            📄 หน้าที่ 2
+                        </button>
+                    </div>
+
+                    <!-- Page 1 -->
+                    <div class="status-page active" id="page1">
+                        <div class="form-group">
+                            <label>ข้อความบรรทัดที่ 1</label>
+                            <input type="text" id="page1_text1" class="form-input" placeholder="ใส่ข้อความ..."
+                                maxlength="128">
+                            <span class="char-count"><span id="page1_text1_count">0</span>/128</span>
+                        </div>
+                        <div class="form-group">
+                            <label>ข้อความบรรทัดที่ 2</label>
+                            <input type="text" id="page1_text2" class="form-input" placeholder="ใส่ข้อความ..."
+                                maxlength="128">
+                            <span class="char-count"><span id="page1_text2_count">0</span>/128</span>
+                        </div>
+                        <div class="form-group">
+                            <label>ข้อความบรรทัดที่ 3</label>
+                            <input type="text" id="page1_text3" class="form-input" placeholder="ใส่ข้อความ..."
+                                maxlength="128">
+                            <span class="char-count"><span id="page1_text3_count">0</span>/128</span>
+                        </div>
+                        <div class="form-group">
+                            <label>🖼️ ลิงค์รูปภาพ</label>
+                            <input type="url" id="page1_image" class="form-input"
+                                placeholder="https://example.com/image.png">
+                            <div class="image-preview" id="page1_preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Page 2 -->
+                    <div class="status-page" id="page2">
+                        <div class="form-group">
+                            <label>ข้อความบรรทัดที่ 1</label>
+                            <input type="text" id="page2_text1" class="form-input" placeholder="ใส่ข้อความ..."
+                                maxlength="128">
+                            <span class="char-count"><span id="page2_text1_count">0</span>/128</span>
+                        </div>
+                        <div class="form-group">
+                            <label>ข้อความบรรทัดที่ 2</label>
+                            <input type="text" id="page2_text2" class="form-input" placeholder="ใส่ข้อความ..."
+                                maxlength="128">
+                            <span class="char-count"><span id="page2_text2_count">0</span>/128</span>
+                        </div>
+                        <div class="form-group">
+                            <label>ข้อความบรรทัดที่ 3</label>
+                            <input type="text" id="page2_text3" class="form-input" placeholder="ใส่ข้อความ..."
+                                maxlength="128">
+                            <span class="char-count"><span id="page2_text3_count">0</span>/128</span>
+                        </div>
+                        <div class="form-group">
+                            <label>🖼️ ลิงค์รูปภาพ</label>
+                            <input type="url" id="page2_image" class="form-input"
+                                placeholder="https://example.com/image.png">
+                            <div class="image-preview" id="page2_preview"></div>
+                        </div>
+                    </div>
+
+                    <!-- Save Button -->
+                    <div class="status-actions">
+                        <button class="btn btn-primary btn-lg" id="saveStatusBtn" onclick="saveStatusConfig()">
+                            💾 บันทึกการตั้งค่า
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Transactions Section -->
+            <section class="transactions-section">
+                <div class="section-header-inline">
+                    <h3>📋 ประวัติธุรกรรม</h3>
+                </div>
+
+                <div class="transactions-table">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>วันที่</th>
+                                <th>รายการ</th>
+                                <th>จำนวน</th>
+                                <th>คงเหลือ</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transactionsBody">
+                            <tr>
+                                <td colspan="4" class="no-data">ไม่มีข้อมูล</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Package Modal -->
+    <div class="modal" id="packageModal">
+        <div class="modal-overlay" onclick="closePackageModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>📦 เลือกแพ็คเกจ</h3>
+                <button class="modal-close" onclick="closePackageModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="package-list" id="packageList">
+                    <!-- Packages loaded dynamically -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token Help Modal -->
+    <div class="modal" id="tokenHelpModal">
+        <div class="modal-overlay" onclick="closeTokenHelpModal()"></div>
+        <div class="modal-content token-help-modal">
+            <div class="modal-header">
+                <h3>🔐 วิธีหา Discord Token</h3>
+                <button class="modal-close" onclick="closeTokenHelpModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="token-help-content">
+                    <div class="warning-box">
+                        <span class="warning-icon">⚠️</span>
+                        <div>
+                            <strong>คำเตือนสำคัญ!</strong>
+                            <p>ห้ามแชร์ Token ให้ใครเด็ดขาด! Token เหมือนรหัสผ่านบัญชี Discord ของคุณ</p>
+                        </div>
+                    </div>
+
+                    <div class="step-list">
+                        <div class="step">
+                            <div class="step-number">1</div>
+                            <div class="step-content">
+                                <strong>เปิด Discord บน Browser</strong>
+                                <p>เข้าเว็บ <a href="https://discord.com/app" target="_blank">discord.com/app</a> แล้ว
+                                    Login</p>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">2</div>
+                            <div class="step-content">
+                                <strong>เปิด Developer Tools</strong>
+                                <p>กดปุ่ม <kbd>F12</kbd> หรือ <kbd>Ctrl+Shift+I</kbd> (Mac: <kbd>Cmd+Option+I</kbd>)</p>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">3</div>
+                            <div class="step-content">
+                                <strong>ไปที่แถบ Application</strong>
+                                <p>คลิกที่แถบ "Application" (ถ้าไม่เห็น ให้กด >> เพื่อดูเพิ่มเติม)</p>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">4</div>
+                            <div class="step-content">
+                                <strong>เข้า Local Storage</strong>
+                                <p>เลือก Storage > Local Storage > https://discord.com</p>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">5</div>
+                            <div class="step-content">
+                                <strong>ค้นหา Token</strong>
+                                <p>ในช่อง Filter พิมพ์ <code>token</code> แล้วหาแถวที่ชื่อ "token"</p>
+                            </div>
+                        </div>
+
+                        <div class="step">
+                            <div class="step-number">6</div>
+                            <div class="step-content">
+                                <strong>คัดลอก Token</strong>
+                                <p>Copy ค่าในช่อง Value (ลบเครื่องหมาย <code>"</code> หัวท้ายออก)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="token-example">
+                        <p><strong>ตัวอย่าง Token:</strong></p>
+                        <code>MTIzNDU2Nzg5MDEyMzQ1Njc4.GAbCdE.xyzABC123...</code>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Topup Modal -->
+    <div class="modal" id="topupModal">
+        <div class="modal-overlay" onclick="closeTopupModal()"></div>
+        <div class="modal-content topup-modal">
+            <div class="modal-header">
+                <h3>💰 เติมเงินผ่าน PromptPay</h3>
+                <button class="modal-close" onclick="closeTopupModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="topup-content">
+                    <!-- Step 1: QR Code -->
+                    <div class="topup-step" id="topupStep1">
+                        <div class="qr-section">
+                            <div class="qr-wrapper">
+                                <img id="promptpayQR" src="" alt="PromptPay QR" class="qr-image">
+                            </div>
+                            <div class="qr-info">
+                                <div class="qr-name">ธนวัฒน์ ไชยกุล</div>
+                                <div class="qr-phone">063-147-5942</div>
+                            </div>
+                        </div>
+
+                        <div class="topup-form">
+                            <div class="form-group">
+                                <label>💵 จำนวนเงินที่ต้องการเติม (บาท)</label>
+                                <input type="number" id="topupAmount" class="form-input" min="10"
+                                    placeholder="เช่น 100, 500, 1000" required>
+                            </div>
+                            <div class="quick-amounts">
+                                <button type="button" class="quick-btn" onclick="setTopupAmount(50)">฿50</button>
+                                <button type="button" class="quick-btn" onclick="setTopupAmount(100)">฿100</button>
+                                <button type="button" class="quick-btn" onclick="setTopupAmount(200)">฿200</button>
+                                <button type="button" class="quick-btn" onclick="setTopupAmount(500)">฿500</button>
+                            </div>
+                            <button class="btn btn-primary btn-block" onclick="goToStep2()">
+                                ถัดไป → แนบสลิป
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step 2: Upload Slip -->
+                    <div class="topup-step hidden" id="topupStep2">
+                        <div class="slip-upload-section">
+                            <div class="upload-info">
+                                <p>ยอดเติม: <strong id="confirmAmount">฿0</strong></p>
+                            </div>
+
+                            <div class="slip-dropzone" id="slipDropzone"
+                                onclick="document.getElementById('slipInput').click()">
+                                <input type="file" id="slipInput" accept="image/*" hidden
+                                    onchange="handleSlipSelect(event)">
+                                <div class="dropzone-content" id="dropzoneContent">
+                                    <span class="dropzone-icon">📷</span>
+                                    <p>คลิกหรือลากไฟล์มาวางที่นี่</p>
+                                    <span class="dropzone-hint">รองรับ JPG, PNG (สูงสุด 5MB)</span>
+                                </div>
+                                <div class="slip-preview hidden" id="slipPreview">
+                                    <img id="slipPreviewImg" src="" alt="Slip Preview">
+                                    <button class="remove-slip" onclick="removeSlip(event)">&times;</button>
+                                </div>
+                            </div>
+
+                            <div class="topup-actions">
+                                <button class="btn btn-secondary" onclick="goToStep1()">
+                                    ← ย้อนกลับ
+                                </button>
+                                <button class="btn btn-primary" id="submitTopupBtn" onclick="submitTopup()" disabled>
+                                    📤 ส่งสลิป
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Step 3: Success -->
+                    <div class="topup-step hidden" id="topupStep3">
+                        <div class="success-section">
+                            <div class="success-icon">✅</div>
+                            <h4>ส่งสลิปเรียบร้อย!</h4>
+                            <p>กรุณารอแอดมินตรวจสอบและเติมเงินให้ภายใน 5-15 นาที</p>
+                            <button class="btn btn-primary" onclick="closeTopupModal()">ปิด</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div class="toast-container" id="toastContainer"></div>
+
+    <!-- Scripts -->
+    <script src="js/security.js"></script>
+    <script src="js/dashboard.js"></script>
+</body>
+
+</html>

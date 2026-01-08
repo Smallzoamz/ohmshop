@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="บริการเช่าสถานะสตรีมมิ่งดิสคอร์ด 24/7 - ตั้งค่าสถานะได้เอง ใส่รูปได้เอง">
+    <title>OHM SHOP - เช่าสถานะสตรีมมิ่งดิสคอร์ด</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Noto+Sans+Thai:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+
+    <link rel="stylesheet" href="css/style.css">
+
+    <link rel="icon" type="image/svg+xml"
+        href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🎮%3C/text%3E%3C/svg%3E">
+</head>
+
+<body>
+    <header class="header" id="header">
+        <div class="container">
+            <div class="header-inner">
+                <a href="/" class="logo">
+                    <div class="logo-icon">🎮</div>
+                    <span>OHM<span class="text-gradient">SHOP</span></span>
+                </a>
+
+                <nav class="nav">
+                    <ul class="nav-links" id="navLinks">
+                        <li><a href="#" class="nav-link">หน้าหลัก</a></li>
+                        <li><a href="#packages" class="nav-link">แพ็คเกจ</a></li>
+                        <li><a href="#features" class="nav-link">จุดเด่น</a></li>
+                        <li><a href="#contact" class="nav-link">ติดต่อเรา</a></li>
+                    </ul>
+
+                    <div class="nav-actions">
+                        <a href="/auth/discord" class="btn btn-discord" id="loginBtn">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                                <path
+                                    d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                            </svg>
+                            เข้าสู่ระบบ
+                        </a>
+                    </div>
+
+                    <button class="menu-toggle" id="menuToggle" aria-label="Toggle menu">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </button>
+                </nav>
+            </div>
+        </div>
+    </header>
+
+    <section class="hero">
+        <div class="hero-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    ✨ บริการพรีเมียม 24/7
+                </div>
+
+                <h1 class="hero-title">
+                    เช่าสถานะสตรีมมิ่ง<br>
+                    Discord ได้ง่ายๆ
+                </h1>
+
+                <p class="hero-subtitle">
+                    ตั้งค่าสถานะได้เอง ใส่รูปได้เอง พร้อมระบบจัดการผ่านเว็บไซต์<br>
+                    เริ่มต้นเพียง ฿10 / 7 วัน
+                </p>
+
+                <div class="hero-actions">
+                    <a href="#packages" class="btn btn-primary btn-lg">
+                        🛒 ดูแพ็คเกจ
+                    </a>
+                    <a href="/auth/discord" class="btn btn-secondary btn-lg">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="#5865F2">
+                            <path
+                                d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                        </svg>
+                        เข้าสู่ระบบด้วย Discord
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stats">
+        <div class="container">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" id="statUsers">0</div>
+                    <div class="stat-label">ผู้ใช้งาน</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">⚡</div>
+                    <div class="stat-value" id="statActive">0</div>
+                    <div class="stat-label">กำลังใช้งาน</div>
+                </div>
+
+                <div class="stat-card">
+                    <div class="stat-icon">💰</div>
+                    <div class="stat-value" id="statSales">฿0</div>
+                    <div class="stat-label">ยอดขายรวม</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="packages" id="packages">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">📦 เลือกแพ็คเกจ</h2>
+                <p class="section-subtitle">เลือกแพ็คเกจที่เหมาะกับคุณ ราคาประหยัด คุ้มค่า</p>
+            </div>
+
+            <div class="packages-grid" id="packagesGrid">
+                <!-- Dynamic packages will be loaded here -->
+                <div class="package-card">
+                    <div class="package-header">
+                        <div class="package-badge">🥉</div>
+                        <div class="package-name">Basic</div>
+                        <div class="package-duration">7 วัน</div>
+                    </div>
+                    <div class="package-body">
+                        <div class="package-price">
+                            <span class="price-currency">฿</span>
+                            <span class="price-value">10</span>
+                        </div>
+                        <ul class="package-features">
+                            <li>สถานะ 2 หน้าสลับกัน</li>
+                            <li>ข้อความ 3 บรรทัดต่อหน้า</li>
+                            <li>ใส่รูปภาพได้ 1 รูปต่อหน้า</li>
+                            <li>ตั้งค่าผ่านเว็บไซต์</li>
+                            <li>ออนไลน์ 24/7</li>
+                        </ul>
+                        <a href="/auth/discord" class="btn btn-primary">🛒 สั่งซื้อ</a>
+                    </div>
+                </div>
+
+                <div class="package-card popular">
+                    <div class="package-header">
+                        <div class="package-badge">🥈</div>
+                        <div class="package-name">Standard</div>
+                        <div class="package-duration">15 วัน</div>
+                    </div>
+                    <div class="package-body">
+                        <div class="package-price">
+                            <span class="price-currency">฿</span>
+                            <span class="price-value">15</span>
+                        </div>
+                        <ul class="package-features">
+                            <li>สถานะ 2 หน้าสลับกัน</li>
+                            <li>ข้อความ 3 บรรทัดต่อหน้า</li>
+                            <li>ใส่รูปภาพได้ 1 รูปต่อหน้า</li>
+                            <li>ตั้งค่าผ่านเว็บไซต์</li>
+                            <li>ออนไลน์ 24/7</li>
+                        </ul>
+                        <a href="/auth/discord" class="btn btn-primary">🛒 สั่งซื้อ</a>
+                    </div>
+                </div>
+
+                <div class="package-card">
+                    <div class="package-header">
+                        <div class="package-badge">🥇</div>
+                        <div class="package-name">Premium</div>
+                        <div class="package-duration">30 วัน</div>
+                    </div>
+                    <div class="package-body">
+                        <div class="package-price">
+                            <span class="price-currency">฿</span>
+                            <span class="price-value">30</span>
+                        </div>
+                        <ul class="package-features">
+                            <li>สถานะ 2 หน้าสลับกัน</li>
+                            <li>ข้อความ 3 บรรทัดต่อหน้า</li>
+                            <li>ใส่รูปภาพได้ 1 รูปต่อหน้า</li>
+                            <li>ตั้งค่าผ่านเว็บไซต์</li>
+                            <li>ออนไลน์ 24/7</li>
+                        </ul>
+                        <a href="/auth/discord" class="btn btn-primary">🛒 สั่งซื้อ</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features" id="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">✨ จุดเด่นของเรา</h2>
+                <p class="section-subtitle">ทำไมต้องเลือกใช้บริการของเรา?</p>
+            </div>
+
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">🕐</div>
+                    <h3 class="feature-title">ออนไลน์ 24/7</h3>
+                    <p class="feature-desc">บอทของเราทำงานตลอด 24 ชั่วโมง ไม่มีหลัน ไม่มีหลุด</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🎨</div>
+                    <h3 class="feature-title">ตั้งค่าได้เอง</h3>
+                    <p class="feature-desc">ตั้งค่าข้อความสถานะได้ 2 หน้า หน้าละ 3 บรรทัด</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🖼️</div>
+                    <h3 class="feature-title">ใส่รูปได้</h3>
+                    <p class="feature-desc">ใส่รูปภาพได้หน้าละ 1 รูป ให้สถานะดูสวยงาม</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💻</div>
+                    <h3 class="feature-title">จัดการผ่านเว็บ</h3>
+                    <p class="feature-desc">แก้ไขสถานะได้ทุกที่ผ่านเว็บไซต์ ไม่ต้องใช้คำสั่ง</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">💳</div>
+                    <h3 class="feature-title">เติมเงินง่าย</h3>
+                    <p class="feature-desc">เติมเงินผ่าน Bot ใน Discord ได้เลย สะดวกรวดเร็ว</p>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon">🛡️</div>
+                    <h3 class="feature-title">ปลอดภัย</h3>
+                    <p class="feature-desc">ไม่ต้องให้ Token ระบบปลอดภัย 100%</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="how-it-works" id="how">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">🚀 วิธีใช้งาน</h2>
+                <p class="section-subtitle">เริ่มต้นใช้งานง่ายๆ เพียง 4 ขั้นตอน</p>
+            </div>
+
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h4 class="step-title">เข้าสู่ระบบ</h4>
+                    <p class="step-desc">Login ด้วย Discord Account ของคุณ</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h4 class="step-title">เติมเงิน</h4>
+                    <p class="step-desc">เติมเงินผ่าน Bot ใน Discord Server</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h4 class="step-title">ซื้อแพ็คเกจ</h4>
+                    <p class="step-desc">เลือกแพ็คเกจที่ต้องการ</p>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h4 class="step-title">ตั้งค่าสถานะ</h4>
+                    <p class="step-desc">ตั้งค่าข้อความและรูปภาพ เสร็จ!</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="contact" id="contact">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">📞 ติดต่อเรา</h2>
+                <p class="section-subtitle">มีคำถามหรือต้องการความช่วยเหลือ? เข้าร่วม Discord Server ของเรา</p>
+            </div>
+
+            <div class="contact-grid">
+                <div class="contact-info">
+                    <h3>🎮 เข้าร่วม Discord Server</h3>
+                    <p>พูดคุย สอบถาม แจ้งปัญหา และรับข่าวสารอัปเดตใหม่ๆ ได้ที่ Discord Server ของเรา</p>
+
+                    <a href="https://discord.gg/4PQnDebdZK" class="btn btn-discord btn-lg" target="_blank">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028 14.09 14.09 0 0 0 1.226-1.994.076.076 0 0 0-.041-.106 13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.928 1.793 8.18 1.793 12.062 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.892.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.03zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z" />
+                        </svg>
+                        เข้าร่วม Discord Server
+                    </a>
+                </div>
+
+                <div class="discord-embed">
+                    <iframe src="https://ptb.discord.com/widget?id=1452001816437854382&theme=dark" width="350"
+                        height="500" allowtransparency="true" frameborder="0"
+                        sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts">
+                    </iframe>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <div class="footer-logo">
+                        <div class="logo-icon">🎮</div>
+                        <span>OHM SHOP</span>
+                    </div>
+                    <p class="footer-desc">
+                        บริการเช่าสถานะสตรีมมิ่งดิสคอร์ด คุณภาพดี ราคาประหยัด พร้อมบริการ 24 ชั่วโมง
+                    </p>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="footer-title">เมนูหลัก</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">หน้าหลัก</a></li>
+                        <li><a href="#packages">แพ็คเกจ</a></li>
+                        <li><a href="#features">จุดเด่น</a></li>
+                        <li><a href="#contact">ติดต่อเรา</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="footer-title">บัญชีผู้ใช้</h4>
+                    <ul class="footer-links">
+                        <li><a href="/auth/discord">เข้าสู่ระบบ</a></li>
+                        <li><a href="/dashboard.html">แดชบอร์ด</a></li>
+                        <li><a href="#">ตั้งค่าสถานะ</a></li>
+                        <li><a href="#">ประวัติ</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-col">
+                    <h4 class="footer-title">ช่วยเหลือ</h4>
+                    <ul class="footer-links">
+                        <li><a href="#">วิธีใช้งาน</a></li>
+                        <li><a href="#">คำถามที่พบบ่อย</a></li>
+                        <li><a href="#">แจ้งปัญหา</a></li>
+                        <li><a href="#">นโยบาย</a></li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p class="footer-copyright">
+                    © 2026 OHM SHOP. All rights reserved.
+                </p>
+                <p class="footer-credit">
+                    Made with ❤️ by <strong>Bonchon-Studio</strong>
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/security.js"></script>
+    <script src="js/app.js"></script>
+</body>
+
+</html>
