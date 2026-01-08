@@ -509,8 +509,6 @@ app.get('/api/topup/pending', isAuthenticated, async (req, res) => {
     try {
         const user = req.user;
         // Fetch last 5 topups status
-        const user = req.user;
-        // Fetch last 5 topups status
         const pending = await TopupDB.getByUserId(user.id, 5);
         res.json(pending);
     } catch (err) {
