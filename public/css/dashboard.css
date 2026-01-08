@@ -1156,4 +1156,61 @@
     .transactions-table table {
         min-width: 500px;
     }
+
+}
+
+/* ============================================
+   Placeholder Buttons
+   ============================================ */
+.placeholders-section {
+    padding: var(--spacing-lg) var(--spacing-xl);
+    border-bottom: 1px solid var(--bg-secondary);
+    background: linear-gradient(to right, rgba(88, 101, 242, 0.03), transparent);
+}
+
+.placeholders-section h4 {
+    font-size: 0.95rem;
+    color: var(--text-secondary);
+    margin-bottom: var(--spacing-sm);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.placeholder-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--spacing-sm);
+}
+
+.btn-placeholder {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: var(--bg-secondary);
+    border: 1px solid transparent;
+    border-radius: var(--radius-md);
+    color: var(--primary);
+    font-family: monospace;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-placeholder span {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    pointer-events: none;
+}
+
+.btn-placeholder:hover {
+    background: var(--primary-50);
+    border-color: var(--primary-100);
+    transform: translateY(-1px);
+}
+
+.btn-placeholder:active {
+    transform: translateY(0);
 }

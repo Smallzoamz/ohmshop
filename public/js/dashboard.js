@@ -705,3 +705,29 @@ async function submitTopup() {
         btn.innerHTML = '📤 ส่งสลิป';
     }
 }
+
+// ============================================
+// Copy to Clipboard
+// ============================================
+function copyToClipboard(text) {
+    if (!text) return;
+
+    // Copy text
+    navigator.clipboard.writeText(text).then(() => {
+        showToast(`คัดลอก "${text}" แล้ว!`, 'success');
+    }).catch(err => {
+        console.error('Failed to copy:', err);
+        // Fallback
+        const textArea = document.createElement("textarea");
+        textArea.value = text;
+        document.body.appendChild(textArea);
+        textArea.select();
+        try {
+            document.execCommand('copy');
+            showToast(`คัดลอก "${text}" แล้ว!`, 'success');
+        } catch (e) {
+            showToast('ไม่สามารถคัดลอกได้', 'error');
+        }
+        document.body.removeChild(textArea);
+    });
+}
