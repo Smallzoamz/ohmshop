@@ -28,8 +28,6 @@
     "node-fetch": "^3.3.2",
     "passport": "^0.7.0",
     "passport-discord": "^0.1.4",
-    "passport": "^0.7.0",
-    "passport-discord": "^0.1.4",
     "pg": "^8.11.3",
     "connect-pg-simple": "^9.0.1"
   },
