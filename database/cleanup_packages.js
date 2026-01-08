@@ -32,15 +32,31 @@ async function cleanup() {
         if (rows.length === 0) {
             console.log('✨ No duplicates found.');
         } else {
-            console.log(`🗑️ Found ${rows.length} duplicate packages. Deleting...`);
+            console.log(`🗑️ Found ${rows.length} duplicate packages.`);
 
-            const idsToDelete = rows.map(r => r.id);
-            await client.query(`
-                DELETE FROM packages 
-                WHERE id = ANY($1::int[])
-            `, [idsToDelete]);
+            for (const row of rows) {
+                // Find master ID for this package type
+                const masterRes = await client.query(`
+                    SELECT MIN(id) as id FROM packages 
+                    WHERE name = $1 AND duration_days = $2
+                `, [row.name, row.duration_days]);
 
-            console.log('✅ Duplicates deleted.');
+                const masterId = masterRes.rows[0].id;
+
+                if (masterId && masterId !== row.id) {
+                    console.log(`🔄 Reassigning subscriptions from Package ${row.id} to ${masterId}...`);
+                    await client.query(`
+                        UPDATE subscriptions 
+                        SET package_id = $1 
+                        WHERE package_id = $2
+                    `, [masterId, row.id]);
+
+                    console.log(`❌ Deleting duplicate Package ${row.id}...`);
+                    await client.query('DELETE FROM packages WHERE id = $1', [row.id]);
+                }
+            }
+
+            console.log('✅ Duplicates cleaned up.');
         }
 
         // 2. Add Unique Constraint to prevent future duplicates
