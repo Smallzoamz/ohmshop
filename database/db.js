@@ -25,14 +25,23 @@ async function initializeDatabase() {
     // Initialize SQL.js
     const SQL = await initSqlJs();
 
-    // Load existing database or create new
-    if (fs.existsSync(DB_PATH)) {
-        const buffer = fs.readFileSync(DB_PATH);
-        db = new SQL.Database(buffer);
-        console.log('✅ Database loaded from file');
+    // Check if running on Vercel (read-only filesystem usually)
+    // We'll use in-memory DB if file write is not possible or if explicitly disabled
+    const isVercel = process.env.VERCEL || process.env.NOW_REGION;
+
+    // Load existing database Or Create new
+    if (!isVercel && fs.existsSync(DB_PATH)) {
+        try {
+            const buffer = fs.readFileSync(DB_PATH);
+            db = new SQL.Database(buffer);
+            console.log('✅ Database loaded from file');
+        } catch (err) {
+            console.error('Failed to load DB file, creating new in-memory:', err);
+            db = new SQL.Database();
+        }
     } else {
         db = new SQL.Database();
-        console.log('✅ New database created');
+        console.log(isVercel ? '✅ Vercel: New in-memory database created' : '✅ New database created');
     }
 
     // Run schema (use exec for multiple statements)
@@ -45,15 +54,17 @@ async function initializeDatabase() {
         } catch (err) {
             // Ignore "table already exists" errors
             if (!err.message.includes('already exists')) {
-                throw err;
+                console.error('Schema error:', err);
             }
         }
     }
 
-    // Save to file
-    saveDatabase();
-    initialized = true;
+    // Save to file (Only if not Vercel)
+    if (!isVercel) {
+        saveDatabase();
+    }
 
+    initialized = true;
     return db;
 }
 
@@ -61,10 +72,17 @@ async function initializeDatabase() {
  * Save database to file
  */
 function saveDatabase() {
+    // Skip saving on Vercel/Read-only env
+    if (process.env.VERCEL || process.env.NOW_REGION) return;
+
     if (db) {
-        const data = db.export();
-        const buffer = Buffer.from(data);
-        fs.writeFileSync(DB_PATH, buffer);
+        try {
+            const data = db.export();
+            const buffer = Buffer.from(data);
+            fs.writeFileSync(DB_PATH, buffer);
+        } catch (err) {
+            console.error('Failed to save database:', err.message);
+        }
     }
 }
 

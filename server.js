@@ -74,12 +74,21 @@ const limiter = rateLimit({
 app.use('/api/', limiter);
 
 // Session
-app.use(session({
-    store: new FileStore({
+let sessionStore;
+if (process.env.VERCEL || process.env.NOW_REGION || process.env.SESSION_MEMORY) {
+    sessionStore = new session.MemoryStore();
+    console.log('✅ Using MemoryStore for sessions');
+} else {
+    sessionStore = new FileStore({
         path: './sessions',
         ttl: 86400 * 7, // 7 days
         retries: 0
-    }),
+    });
+    console.log('✅ Using FileStore for sessions');
+}
+
+app.use(session({
+    store: sessionStore,
     secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
     resave: false,
     saveUninitialized: false,
