@@ -107,3 +107,32 @@
 | server.js | 400 | /api/topup/request | Feature | Added Topup ID to webhook embed for bot parsing |
 | server.js | 450 | /api/topup/pending | Endpoint | Added endpoint for polling pending topups |
 | public/js/dashboard.js | 715 | startTopupWatcher | Feature | Added real-time polling to notify Approved/Rejected status |
+
+---
+
+### [2026-01-09 03:23:00] - UI Enhancements: Wavy Footer, Dark Mode, Social Links
+| File | Line | Keyword | Status | Change |
+|------|------|---------|--------|--------|
+| public/css/style.css | 82 | --footer-bg | Feature | Added footer-specific CSS variables for theme inversion |
+| public/css/style.css | 89 | [data-theme="dark"] | Feature | Added Dark Mode theme with inverted footer (white footer in dark mode) |
+| public/css/style.css | 269 | .theme-toggle | Feature | Added theme toggle button styling with sun/moon icon visibility |
+| public/css/style.css | 893 | .footer | Edited | Changed footer to use theme-aware variables (--footer-bg, --footer-text) |
+| public/css/style.css | 945 | .footer-wave | Feature | Added wavy footer animation with 2 layers |
+| public/index.html | 40 | themeToggle | Feature | Added theme toggle button with sun/moon SVG icons |
+| public/index.html | 331 | footer-wave | Feature | Added animated SVG wave layers to footer |
+| public/index.html | 254 | feature-desc | Edited | Changed top-up description from "Bot" to "เว็บไซต์" |
+| public/index.html | 283 | step-desc | Edited | Changed how-to step 2 description to "เติมเงินผ่านเว็บไซต์" |
+| public/index.html | 303 | social-links | Feature | Added Facebook/X/Instagram social buttons in Contact section |
+| public/js/app.js | 20 | initTheme | Feature | Added theme initialization with localStorage persistence |
+| public/dashboard.html | 42 | themeToggle | Feature | Added theme toggle button to dashboard header |
+| public/dashboard.html | 476 | footer | Feature | Added wavy footer with Bonchon-Studio credit to dashboard |
+| public/js/dashboard.js | 18 | initTheme | Feature | Added theme toggle function to dashboard with localStorage sync |
+
+---
+
+### [2026-01-09 15:05:00] - Manual Topup Fix
+| File | Line | Keyword | Status | Change |
+|------|------|---------|--------|--------|
+| public/admin.html | 279 | topupUserId | Fixed | Changed input to select dropdown for user selection |
+| public/js/admin.js | 437 | showManualTopupModal | Fixed | Added async user loading into dropdown from API |
+| public/js/admin.js | 469 | processManualTopup | Fixed | Improved validation, Thai error messages, refresh stats after topup |

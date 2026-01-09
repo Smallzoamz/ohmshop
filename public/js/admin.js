@@ -434,10 +434,29 @@ async function loadTopups() {
     }
 }
 
-function showManualTopupModal() {
-    document.getElementById('topupUserId').value = '';
+async function showManualTopupModal() {
+    // Reset form
     document.getElementById('topupAmount').value = '';
     document.getElementById('topupReference').value = '';
+
+    // Load users into dropdown
+    const select = document.getElementById('topupUserId');
+    select.innerHTML = '<option value="">-- กำลังโหลด... --</option>';
+
+    try {
+        const response = await fetch('/api/admin/users');
+        if (response.ok) {
+            const users = await response.json();
+            select.innerHTML = '<option value="">-- เลือกผู้ใช้ --</option>' +
+                users.map(user => `<option value="${user.id}">${user.global_name || user.username} (@${user.username}) - ฿${user.balance.toLocaleString()}</option>`).join('');
+        } else {
+            select.innerHTML = '<option value="">-- โหลดผู้ใช้ล้มเหลว --</option>';
+        }
+    } catch (err) {
+        select.innerHTML = '<option value="">-- โหลดผู้ใช้ล้มเหลว --</option>';
+        console.error('Failed to load users:', err);
+    }
+
     document.getElementById('topupModal').classList.add('active');
 }
 
@@ -446,12 +465,31 @@ function closeTopupModal() {
 }
 
 async function processManualTopup() {
-    const userId = parseInt(document.getElementById('topupUserId').value);
-    const amount = parseInt(document.getElementById('topupAmount').value);
+    const userIdValue = document.getElementById('topupUserId').value;
+    const amountValue = document.getElementById('topupAmount').value;
     const reference = document.getElementById('topupReference').value;
 
-    if (!userId || !amount) {
-        showToast('Please fill in User ID and Amount', 'error');
+    // Validate inputs
+    if (!userIdValue || userIdValue === '') {
+        showToast('กรุณาเลือกผู้ใช้', 'error');
+        return;
+    }
+
+    if (!amountValue || amountValue === '') {
+        showToast('กรุณากรอกจำนวนเงิน', 'error');
+        return;
+    }
+
+    const userId = parseInt(userIdValue);
+    const amount = parseInt(amountValue);
+
+    if (isNaN(userId) || userId <= 0) {
+        showToast('User ID ไม่ถูกต้อง', 'error');
+        return;
+    }
+
+    if (isNaN(amount) || amount <= 0) {
+        showToast('จำนวนเงินต้องมากกว่า 0', 'error');
         return;
     }
 
@@ -462,11 +500,16 @@ async function processManualTopup() {
             body: JSON.stringify({ userId, amount, reference })
         });
 
-        if (!response.ok) throw new Error('Failed to process topup');
+        const data = await response.json();
 
-        showToast('Topup processed successfully', 'success');
+        if (!response.ok) {
+            throw new Error(data.error || 'Failed to process topup');
+        }
+
+        showToast(`เติมเงินสำเร็จ! ยอดคงเหลือใหม่: ฿${data.newBalance.toLocaleString()}`, 'success');
         closeTopupModal();
         loadTopups();
+        loadDashboardStats(); // Refresh stats
 
     } catch (err) {
         showToast('Error: ' + err.message, 'error');
