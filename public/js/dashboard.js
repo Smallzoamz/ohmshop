@@ -801,22 +801,65 @@ function startTopupWatcher() {
         }
     };
 
-    // Initial check
-    checkStatus();
-
-    // Poll every 5 seconds
-    topupPollInterval = setInterval(checkStatus, 5000);
+    topupPollInterval = setInterval(checkStatus, 10000); // Poll every 10s
+    checkStatus(); // Initial check
 }
 
-// Start watcher when dashboard loads
-// Note: We already call this in checkAuthentication logic if we wanted, 
-// but since we append at bottom, we can just hook into existing DOMContentLoaded if currentUser is set,
-// OR since checkAuthentication calls everything, we can just let it run if we add the call there.
-// However, editing checkAuthentication is invasive (top of file).
-// Let's use a separate DOMContentLoaded hook that checks if currentUser exists (set by checkAuth).
-// Or better: Override checkAuthentication? No.
-// Let's just run it. The function 'startTopupWatcher' handles auth check inside fetch 401.
-// But better to only start if on dashboard.
+// ==========================================
+// REDEEM SYSTEM
+// ==========================================
+function showRedeemModal() {
+    const modal = document.getElementById('redeemModal');
+    modal.classList.add('active');
+    document.getElementById('promoCodeInput').value = '';
+    document.getElementById('promoCodeInput').focus();
+}
+
+function closeRedeemModal() {
+    document.getElementById('redeemModal').classList.remove('active');
+}
+
+async function submitRedeem() {
+    const input = document.getElementById('promoCodeInput');
+    const code = input.value.trim();
+    const btn = document.getElementById('submitRedeemBtn');
+
+    if (!code) {
+        showToast('กรุณากรอกโค้ด', 'warning');
+        return;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '⏳ กำลังตรวจสอบ...';
+
+    try {
+        const response = await fetch('/api/redeem', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ code })
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+            throw new Error(result.error || 'ใช้งานโค้ดไม่สำเร็จ');
+        }
+
+        showToast(result.message, 'success');
+        closeRedeemModal();
+
+        // Refresh Data
+        checkAuthentication();
+
+    } catch (err) {
+        showToast(err.message, 'error');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '✅ แลกรับสิทธิ์';
+    }
+}
+
+// Start watcher if on dashboard
 if (document.getElementById('userBalance')) {
     startTopupWatcher();
 }

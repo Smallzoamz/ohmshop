@@ -440,6 +440,33 @@ const SettingsDB = {
 };
 
 // ============================================
+// Promo Code Operations
+// ============================================
+const PromoCodeDB = {
+    create: async (code, days, hours, reason = '') => {
+        await pool.query(`
+            INSERT INTO promo_codes (code, days, hours, reason)
+            VALUES ($1, $2, $3, $4)
+        `, [code, days, hours, reason]);
+        return code;
+    },
+
+    findByCode: async (code) => {
+        return queryOne('SELECT * FROM promo_codes WHERE code = $1', [code]);
+    },
+
+    markUsed: async (code, userId) => {
+        const res = await pool.query(`
+            UPDATE promo_codes 
+            SET is_used = 1, used_by = $1, used_at = NOW() 
+            WHERE code = $2 AND is_used = 0
+            RETURNING *
+        `, [userId, code]);
+        return res.rows[0];
+    }
+};
+
+// ============================================
 // Stats for Dashboard
 // ============================================
 const StatsDB = {
@@ -474,5 +501,6 @@ module.exports = {
     TopupDB,
     TransactionDB,
     SettingsDB,
+    PromoCodeDB,
     StatsDB
 };

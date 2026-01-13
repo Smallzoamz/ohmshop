@@ -91,6 +91,9 @@
                         <button class="btn btn-sm btn-secondary" onclick="showTopupModal()">
                             💰 เติมเงิน
                         </button>
+                        <button class="btn btn-sm btn-secondary" onclick="showRedeemModal()" style="margin-left: 5px;">
+                            🎫 กรอกโค้ด
+                        </button>
                     </div>
                     <div class="profile-expiry" id="profileExpiry">
                         <div class="expiry-label">📅 สถานะหมดอายุ</div>
@@ -500,6 +503,27 @@
             </div>
         </div>
     </footer>
+
+    <!-- Redeem Modal -->
+    <div class="modal" id="redeemModal">
+        <div class="modal-overlay" onclick="closeRedeemModal()"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>🎫 กรอกโค้ดส่วนลด / วันฟรี</h3>
+                <button class="modal-close" onclick="closeRedeemModal()">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>รหัสโปรโมชั่น (Promo Code)</label>
+                    <input type="text" id="promoCodeInput" class="form-input" placeholder="กรอกโค้ดที่นี่..."
+                        style="text-transform: uppercase;">
+                </div>
+                <button class="btn btn-primary btn-block" id="submitRedeemBtn" onclick="submitRedeem()">
+                    ✅ แลกรับสิทธิ์
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Toast Container -->
     <div class="toast-container" id="toastContainer"></div>

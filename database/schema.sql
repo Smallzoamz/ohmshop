@@ -120,3 +120,16 @@ CREATE INDEX IF NOT EXISTS idx_subscriptions_end_date ON subscriptions(end_date)
 CREATE INDEX IF NOT EXISTS idx_topups_user_id ON topups(user_id);
 CREATE INDEX IF NOT EXISTS idx_transactions_user_id ON transactions(user_id);
 CREATE INDEX IF NOT EXISTS idx_status_configs_user_id ON status_configs(user_id);
+
+-- Promo Codes Table
+CREATE TABLE IF NOT EXISTS promo_codes (
+    code TEXT PRIMARY KEY,
+    days INTEGER DEFAULT 0,
+    hours INTEGER DEFAULT 0, -- For smaller rewards
+    is_used INTEGER DEFAULT 0,
+    used_by INTEGER REFERENCES users(id),
+    used_at TIMESTAMP,
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+CREATE INDEX IF NOT EXISTS idx_promo_codes_code ON promo_codes(code);

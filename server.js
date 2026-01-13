@@ -38,7 +38,9 @@ const {
     SubscriptionDB,
     StatusConfigDB,
     TopupDB,
+    TopupDB,
     TransactionDB,
+    PromoCodeDB,
     StatsDB
 } = require('./database/db');
 
@@ -384,6 +386,72 @@ app.put('/api/status-config', isAuthenticated, async (req, res) => {
         res.json({ success: true, config: updated });
     } catch (err) {
         res.status(500).json({ error: err.message });
+    }
+});
+
+// Redeem Promo Code
+app.post('/api/redeem', isAuthenticated, async (req, res) => {
+    try {
+        const { code } = req.body;
+        if (!code) return res.status(400).json({ error: 'กรุณากรอกโค้ด' });
+
+        const trimmedCode = code.trim().toUpperCase();
+
+        // 1. Check Code
+        const promo = await PromoCodeDB.findByCode(trimmedCode);
+        if (!promo) {
+            return res.status(404).json({ error: '❌ ไม่พบโค้ดนี้' });
+        }
+        if (promo.is_used) {
+            return res.status(400).json({ error: '❌ โค้ดนี้ถูกใช้งานไปแล้ว' });
+        }
+
+        const user = req.user;
+
+        // 2. Mark as Used (Transactionally safe-ish via SQL check)
+        const updatedPromo = await PromoCodeDB.markUsed(trimmedCode, user.id);
+        if (!updatedPromo) {
+            return res.status(400).json({ error: '❌ โค้ดถูกใช้ไปแล้วระหว่างดำเนินการ' });
+        }
+
+        // 3. Add Time
+        const existingSub = await SubscriptionDB.getActiveByUserId(user.id);
+        let endDate;
+        const totalDurationMs = (promo.days * 24 * 60 * 60 * 1000) + (promo.hours * 60 * 60 * 1000);
+
+        if (existingSub) {
+            const currentEnd = new Date(existingSub.end_date);
+            // If currentEnd is in past (but status active?), ensure we start from now? 
+            // Actually getActiveByUserId filters end_date > NOW(), so it's valid.
+            endDate = new Date(currentEnd.getTime() + totalDurationMs);
+            await SubscriptionDB.extend(existingSub.id, endDate.toISOString());
+        } else {
+            // New Sub
+            // Auto select 'Basic' package (id=1) or 'Bonus' package?
+            // Ideally we need a 'Bonus' package type or just piggyback on Basic.
+            const bonusPackage = await PackageDB.findById(1) || (await PackageDB.getAll())[0];
+            if (!bonusPackage) throw new Error("No packages available for bonus assignment");
+
+            endDate = new Date(Date.now() + totalDurationMs);
+            await SubscriptionDB.create(user.id, bonusPackage.id, endDate.toISOString());
+        }
+
+        // 4. Record Transaction
+        await TransactionDB.create(user.id, 'adjustment', 0, `Redeemed Code: ${trimmedCode}`, user.balance);
+
+        const timeText = [];
+        if (promo.days > 0) timeText.push(`${promo.days} วัน`);
+        if (promo.hours > 0) timeText.push(`${promo.hours} ชม.`);
+
+        res.json({
+            success: true,
+            message: `รับวันใช้งาน ${timeText.join(' ')} เรียบร้อยแล้ว!`,
+            newEndDate: endDate.toISOString()
+        });
+
+    } catch (err) {
+        console.error('Redeem Error:', err);
+        res.status(500).json({ error: 'ระบบขัดข้อง กรุณาลองใหม่ภายหลัง' });
     }
 });
 
