@@ -130,9 +130,14 @@
 
 ---
 
-### [2026-01-09 15:05:00] - Manual Topup Fix
+### [2026-01-14 00:30:00] - Promo Code Migration (Web)
 | File | Line | Keyword | Status | Change |
 |------|------|---------|--------|--------|
-| public/admin.html | 279 | topupUserId | Fixed | Changed input to select dropdown for user selection |
-| public/js/admin.js | 437 | showManualTopupModal | Fixed | Added async user loading into dropdown from API |
-| public/js/admin.js | 469 | processManualTopup | Fixed | Improved validation, Thai error messages, refresh stats after topup |
+| database/schema.sql | 123 | promo_codes | Created | Added promo_codes table for unified code system |
+| database/db.js | 434 | PromoCodeDB | Created | Added generic DB Accessor for promo codes (create/find/markUsed) |
+| server.js | 42 | PromoCodeDB | Edited | Imported PromoCodeDB |
+| server.js | 377 | /api/redeem | Created | Added redemption API endpoint with validation and subscription update |
+| public/dashboard.html | 94 | showRedeemModal | UI | Added Redeem Code button to Profile section |
+| public/dashboard.html | 507 | redeemModal | UI | Added Redeem Code Modal HTML |
+| public/js/dashboard.js | 811 | submitRedeem | Feature | Added frontend logic for code redemption and API call |
+| server.js | 41 | TopupDB | Fixed | Removed duplicate TopupDB import causing Vercel 500 Error |
