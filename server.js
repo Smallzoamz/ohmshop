@@ -38,7 +38,6 @@ const {
     SubscriptionDB,
     StatusConfigDB,
     TopupDB,
-    TopupDB,
     TransactionDB,
     PromoCodeDB,
     StatsDB
